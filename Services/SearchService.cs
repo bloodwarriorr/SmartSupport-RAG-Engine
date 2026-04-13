@@ -18,22 +18,22 @@ public class SearchService : ISearchService
 
     public async Task<List<SearchResult>> SearchRelevantContentAsync(string query, int limit = 3)
     {
-        // 1. הפיכת השאלה של המשתמש לוקטור
+        // Turn the query into an embedding vector
         var queryEmbeddings = await _embeddingService.GenerateEmbeddingsAsync(new List<string> { query });
         var queryVector = queryEmbeddings[0].ToArray();
 
-        // 2. חיפוש ב-Qdrant
+        // Search the Qdrant collection for similar vectors
         var searchResults = await _qdrantClient.SearchAsync(
             collectionName: "knowledge_base",
             vector: queryVector,
             limit: (ulong)limit
         );
 
-        // 3. עיבוד התוצאות
+        // Map the search results to our SearchResult model
         return searchResults.Select(hit => new SearchResult(
             Content: hit.Payload["content"].ToString(),
             FileName: hit.Payload["file_name"].ToString(),
-            Score: hit.Score // רמת הביטחון של ה-AI בתוצאה (0 עד 1)
+            Score: hit.Score // Assuming the score is a float, you may need to convert it if it's not already in the correct format
         )).ToList();
     }
 
