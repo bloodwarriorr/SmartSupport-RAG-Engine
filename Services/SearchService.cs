@@ -9,11 +9,13 @@ public class SearchService : ISearchService
 {
     private readonly QdrantClient _qdrantClient;
     private readonly ITextEmbeddingGenerationService _embeddingService;
+    private readonly IOllamaChatService _ollamaChatService;
 
-    public SearchService(ITextEmbeddingGenerationService embeddingService)
+    public SearchService(ITextEmbeddingGenerationService embeddingService, IOllamaChatService ollamaChatService)
     {
         _embeddingService = embeddingService;
-        _qdrantClient = new QdrantClient("localhost", 6334);
+        _qdrantClient = new QdrantClient("127.0.0.1", 6334);
+        _ollamaChatService = ollamaChatService;
     }
 
     public async Task<List<SearchResult>> SearchRelevantContentAsync(string query, int limit = 3)
@@ -31,11 +33,12 @@ public class SearchService : ISearchService
 
         // Map the search results to our SearchResult model
         return searchResults.Select(hit => new SearchResult(
-            Content: hit.Payload["content"].ToString(),
-            FileName: hit.Payload["file_name"].ToString(),
+            Content: hit.Payload.ContainsKey("content") ? hit.Payload["content"].ToString() : "No Content",
+            FileName: hit.Payload.ContainsKey("file_name") ? hit.Payload["file_name"].ToString() : "Unknown",
             Score: hit.Score // Assuming the score is a float, you may need to convert it if it's not already in the correct format
         )).ToList();
     }
+   
 
 }
 

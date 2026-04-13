@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Grpc.Net.Client;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.Text;
 using Qdrant.Client;
@@ -7,6 +8,7 @@ using SmartSupport.Api.Data;
 using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Models;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 namespace SmartSupport.Api.Services;
 
@@ -19,8 +21,9 @@ public class IngestionService : IIngestionService
     {
         _dbContext = dbContext;
         _embeddingService = embeddingService;
-        var host = configuration["Qdrant:Host"] ?? "localhost";
+        var host = configuration["Qdrant:Host"] ?? "127.0.0.1";
         var port = int.Parse(configuration["Qdrant:Port"] ?? "6334");
+
         _qdrantClient = new QdrantClient(host, port);
     }
 
@@ -86,16 +89,13 @@ public class IngestionService : IIngestionService
     }
     private async Task EnsureCollectionExistsAsync()
     {
-        // response הוא IReadOnlyList<string>
         var response = await _qdrantClient.ListCollectionsAsync();
-
-        // בדיקה ישירה מול רשימת המחרוזות
         if (!response.Contains("knowledge_base"))
         {
             await _qdrantClient.CreateCollectionAsync("knowledge_base",
                 new VectorParams
                 {
-                    Size = 1536,
+                    Size = 768, 
                     Distance = Distance.Cosine
                 });
         }

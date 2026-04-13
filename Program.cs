@@ -20,12 +20,23 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-
-builder.Services.AddOpenAITextEmbeddingGeneration(modelId, openAiKey);
-
-
 builder.Services.AddScoped<IIngestionService, IngestionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+
+
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", true);
+builder.Services.AddHttpClient<IOllamaChatService, OllamaChatService>();
+builder.Services.AddKernel()
+    .AddOllamaTextEmbeddingGeneration(
+        modelId: "nomic-embed-text",
+        endpoint: new Uri("http://localhost:11434"))
+    .AddOllamaChatCompletion(
+        modelId: "llama3",
+        endpoint: new Uri("http://localhost:11434"));
+
 var app = builder.Build();
 
 
