@@ -1,0 +1,33 @@
+## [ Build Outputs ]
+bin/
+obj/
+[Rr]elease/
+[Dd]ebug/
+
+## [ Visual Studio Metadata ]
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## [ User-Specific Settings & Secrets ]
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+## [ Entity Framework & Databases ]
+*.mdf
+*.ldf
+*.ndf
+
+## [ Tooling & OS ]
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+## [ Packages ]
+*.nupkg
+packages/
+node_modules/

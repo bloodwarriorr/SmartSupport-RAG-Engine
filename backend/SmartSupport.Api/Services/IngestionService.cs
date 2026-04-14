@@ -55,7 +55,7 @@ public class IngestionService : IIngestionService
 
                 var chunkId = Guid.NewGuid();
 
-                // 2. שמירה ב-Qdrant
+                
                 await _qdrantClient.UpsertAsync("knowledge_base", new[]
                 {
                     new PointStruct
@@ -70,7 +70,7 @@ public class IngestionService : IIngestionService
                     }
                 });
 
-                // 3. שמירה ב-SQL
+                
                 document.Chunks.Add(new DocumentChunk
                 {
                     Id = chunkId,

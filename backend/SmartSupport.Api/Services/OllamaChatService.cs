@@ -21,10 +21,10 @@
             {
                 model = ModelName,
                 prompt = prompt,
-                stream = true // קריטי עבור הזרמה!
+                stream = true 
             };
 
-            // משתמשים ב-PostAsync כדי לקבל גישה ל-Stream של ה-Response
+            
             var response = await _httpClient.PostAsJsonAsync("/api/generate", requestBody);
             response.EnsureSuccessStatusCode();
 
@@ -51,7 +51,7 @@
             {
                 model = ModelName,
                 prompt = prompt,
-                stream = false // כאן אנחנו מחכים לכל התשובה
+                stream = false 
             };
 
             var response = await _httpClient.PostAsJsonAsync("/api/generate", requestBody);
