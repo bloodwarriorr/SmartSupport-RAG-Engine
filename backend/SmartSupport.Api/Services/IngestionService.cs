@@ -49,7 +49,7 @@ public class IngestionService : IIngestionService
 
             foreach (var paragraph in paragraphs)
             {
-                // 1. יצירת Embedding (דורש קרדיט ב-OpenAI)
+                
                 var embeddings = await _embeddingService.GenerateEmbeddingsAsync(new List<string> { paragraph });
                 var vector = embeddings[0].ToArray();
 

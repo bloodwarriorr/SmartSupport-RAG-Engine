@@ -15,15 +15,14 @@ namespace SmartSupport.Api.Services
 
         public async IAsyncEnumerable<string> AskQuestionAsync(string query)
         {
-            // 1. חיפוש ב-Qdrant
+            
             var searchResults = await _searchService.SearchRelevantContentAsync(query);
 
-            // 2. בניית הקונטקסט
+            
             var contextText = string.Join("\n", searchResults.Select(r => r.Content));
             var prompt = $"Use this context: {contextText}\n\nQuestion: {query}\n\nAnswer:";
 
-            // 3. קריאה למתודת ה-STREAM ב-Ollama
-            // שים לב: כאן חייבת להיות מתודה שמחזירה IAsyncEnumerable
+            
             await foreach (var chunk in _ollamaChatService.GenerateResponseStreamAsync(prompt))
             {
                 yield return chunk;
