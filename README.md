@@ -1,8 +1,18 @@
-# SmartSupport - AI-Driven RAG System
-A high-performance Support System based on RAG (Retrieval-Augmented Generation) architecture. This system combines semantic vector search with a local Large Language Model (LLM) to provide accurate, context-aware answers.
 
-## Tech Stack
+# SmartSupport - AI-Driven RAG System
+A high-performance Support System based on RAG (Retrieval-Augmented Generation) architecture. This system combines semantic vector search with a Large Language Model (LLM) to provide accurate, context-aware answers based on your own documents.
+
+🏗 Project Structure
+The project is organized as a Monorepo for streamlined development:
+
+**Backend**: .NET 10 API, Orchestration, and Vector integration.
+
+**Client**: Angular 19 modern UI.
+
+🛠 Tech Stack
 Backend: .NET 10 (C#)
+
+Frontend: Angular 19 (Standalone Components, Signals, RxJS)
 
 Vector Database: Qdrant (Running via Docker)
 
@@ -10,66 +20,58 @@ AI Engine: Ollama (Llama 3 Model)
 
 Orchestration: Semantic Kernel
 
-Frontend: Angular 19 (Under development)
+Document Processing: PdfPig (PDF text extraction)
 
-## System Architecture
-The project follows Clean Code and SOLID principles, ensuring a strict separation of concerns:
-
-Ingestion Service: Handles document processing, converts text into vector embeddings, and stores them in Qdrant.
-
-Search Service: Specializes in semantic similarity search within the vector database.
-
-Ollama Service: Manages communication with the local LLM, supporting both standard and streaming responses.
-
-Chat Service (Orchestrator): The "brain" of the system. It fetches relevant data via the Search Service and feeds it into the AI to generate grounded responses.
-
-## Setup Instructions
-1. Run Vector Database (Qdrant)
-The system uses Qdrant to store and retrieve knowledge. Run the following command to start the container:
+🚀 Getting Started
+1. Infrastructure Setup
+Run Qdrant (Vector DB):
 
 Bash
 docker run -p 6333:6333 -p 6334:6334 -v "$(pwd)/qdrant_storage:/qdrant/storage" qdrant/qdrant
-Note: Port 6334 is used for high-speed gRPC communication.
+Install Ollama & Models:
 
-2. Install Ollama & Models
-Download and install Ollama.
+Download Ollama.
 
-Open your terminal and pull the required models:
+Pull the required models:
 
 Bash
-## LLM for Chat & Generation
-ollama pull llama3
+ollama pull llama3            # For text generation
+ollama pull nomic-embed-text  # For vector embeddings
+2. Backend Setup
+Navigate to the directory: cd Backend.
 
-## Model for Text Embeddings (Vectorization)
-ollama pull nomic-embed-text
-3. Backend Configuration
-Ensure your appsettings.json includes the correct endpoints:
+Update appsettings.json with your SQL Connection String and Ollama endpoint.
 
-JSON
-{
-  "Ollama": {
-    "Endpoint": "http://localhost:11434",
-    "ModelId": "llama3"
-  },
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER;Database=SmartSupport;..."
-  }
-}
-## Key Features Implemented
-Real-time Streaming
-The system supports asynchronous streaming of AI responses. Using IAsyncEnumerable<string>, the backend pushes tokens to the client as they are generated. This significantly improves UX by reducing Time To First Token (TTFT).
+Run the API:
 
-## Semantic Context-Aware Search
-Unlike traditional keyword search, this system understands user intent. AI responses are strictly grounded in the retrieved context from the Knowledge Base, effectively eliminating Hallucinations.
+Bash
+dotnet run
+The API will be available at http://localhost:5000 (or your configured port) with Swagger at /swagger.
 
-## Service-Oriented DI
-Fully decoupled architecture using Dependency Injection and Interfaces, making the system highly testable and easy to swap components (e.g., switching from Ollama to Azure OpenAI).
+3. Client Setup
+Navigate to the directory: cd Client.
 
-## Running the Project
-Navigate to the Backend directory: cd SmartSupport.Api.
+Install dependencies:
 
-Build the project: dotnet build.
+Bash
+npm install
+Run the development server:
 
-Run the application: dotnet run.
+Bash
+ng serve
+Access the UI at http://localhost:4200.
 
-Access Swagger UI to test the ask-stream and search endpoints.
+💡 Key Features
+Multi-Format Ingestion: Supports .txt and .pdf file uploads with automatic text extraction and vectorization.
+
+Real-time Streaming: Uses IAsyncEnumerable to stream AI tokens directly to the Angular UI for a smooth "typing" effect.
+
+Semantic Search: Context-aware retrieval that eliminates hallucinations by grounding the LLM in specific knowledge base facts.
+
+Clean Architecture: Strict adherence to SOLID principles and Dependency Injection for easy component swapping.
+
+🛠 Future Roadmap
+
+Admin Dashboard: Comprehensive file management and vector store monitoring.
+
+Persistent History: Storing chat sessions in SQL Server.
