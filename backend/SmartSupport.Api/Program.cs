@@ -3,14 +3,15 @@ using Microsoft.SemanticKernel;
 using SmartSupport.Api.Data;
 using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Services;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var openAiKey = builder.Configuration["OpenAI:ApiKey"];
 var modelId = builder.Configuration["OpenAI:ModelId"] ?? "text-embedding-3-small";
-
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -40,9 +41,26 @@ builder.Services.AddKernel()
     .AddOllamaChatCompletion(
         modelId: "llama3",
         endpoint: new Uri("http://localhost:11434"));
-
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://accounts.google.com";
+        options.Audience = googleClientId;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "accounts.google.com",
+            ValidateAudience = true,
+            ValidAudience = googleClientId,
+            ValidateLifetime = true
+        };
+    });
+builder.Services.AddAuthorization();
 var app = builder.Build();
-
+app.UseCors();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,6 +68,5 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors();
 app.MapControllers();
 app.Run();

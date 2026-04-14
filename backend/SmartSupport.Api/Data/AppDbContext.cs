@@ -7,6 +7,9 @@ namespace SmartSupport.Api.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+        public DbSet<User> Users { get; set; }
+        public DbSet<ChatSession> ChatSessions { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<KnowledgeDocument> Documents { get; set; }
         public DbSet<DocumentChunk> DocumentChunks { get; set; }
 

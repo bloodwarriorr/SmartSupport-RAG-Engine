@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Services;
 using System.Diagnostics.CodeAnalysis; 
 
 namespace SmartSupport.Api.Controllers;
+
 
 [ApiController]
 [Route("api/[controller]")]
