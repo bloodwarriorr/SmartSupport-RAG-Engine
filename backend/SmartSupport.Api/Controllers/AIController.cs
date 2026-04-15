@@ -43,12 +43,26 @@ public class AIController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-      
+        var session = await _context.ChatSessions.FindAsync(sessionId);
+        if (session == null)
+        {
+            session = new ChatSession
+            {
+                Id = sessionId, // ה-GUID שהגיע מהאנגולר
+                UserId = user.Id,
+                Title = query.Length > 30 ? query.Substring(0, 30) + "..." : query, // כותרת זמנית מהשאלה
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.ChatSessions.Add(session);
+            // אנחנו שומרים כאן כדי שההודעה הבאה תוכל להתייחס לסשן הזה ב-DB
+            await _context.SaveChangesAsync();
+        }
         var userMessage = new ChatMessage
         {
             ChatSessionId = sessionId,
             Role = "user",
-            Content = query
+            Content = query,
+            UserEmail = email!
         };
         _context.ChatMessages.Add(userMessage);
         await _context.SaveChangesAsync();
@@ -65,7 +79,9 @@ public class AIController : ControllerBase
         {
             ChatSessionId = sessionId,
             Role = "assistant",
-            Content = fullResponse.ToString()
+            Content = fullResponse.ToString(),
+            UserEmail = email!
+
         };
         _context.ChatMessages.Add(assistantMessage);
         await _context.SaveChangesAsync();

@@ -49,10 +49,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = "accounts.google.com",
+            
+            ValidIssuers = new[] { "https://accounts.google.com", "accounts.google.com" },
             ValidateAudience = true,
             ValidAudience = googleClientId,
-            ValidateLifetime = true
+            ValidateLifetime = true,
+            
+            ClockSkew = TimeSpan.FromMinutes(5)
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine("--- Auth Failed ---");
+                Console.WriteLine($"Exception: {context.Exception.Message}");
+                // אם הטוקן הגיע אבל הוא לא תקין, זה ידפיס למה
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("--- Auth Success! ---");
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();

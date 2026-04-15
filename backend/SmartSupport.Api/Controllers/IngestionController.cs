@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SmartSupport.Api.Controllers;
 
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 
