@@ -48,13 +48,13 @@ public class AIController : ControllerBase
         {
             session = new ChatSession
             {
-                Id = sessionId, // ה-GUID שהגיע מהאנגולר
+                Id = sessionId, 
                 UserId = user.Id,
-                Title = query.Length > 30 ? query.Substring(0, 30) + "..." : query, // כותרת זמנית מהשאלה
+                Title = query.Length > 30 ? query.Substring(0, 30) + "..." : query, 
                 CreatedAt = DateTime.UtcNow
             };
             _context.ChatSessions.Add(session);
-            // אנחנו שומרים כאן כדי שההודעה הבאה תוכל להתייחס לסשן הזה ב-DB
+            
             await _context.SaveChangesAsync();
         }
         var userMessage = new ChatMessage

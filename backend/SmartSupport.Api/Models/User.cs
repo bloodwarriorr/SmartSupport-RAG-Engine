@@ -26,7 +26,7 @@ namespace SmartSupport.Api.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         // קשר למשתמש
-        public int UserId { get; set; } // Foreign Key לטבלת ה-Users
+        public int UserId { get; set; } 
         public User User { get; set; }
 
         public string Title { get; set; } = "New Chat";

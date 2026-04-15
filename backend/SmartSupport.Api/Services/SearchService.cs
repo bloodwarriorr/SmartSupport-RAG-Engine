@@ -9,13 +9,11 @@ public class SearchService : ISearchService
 {
     private readonly QdrantClient _qdrantClient;
     private readonly ITextEmbeddingGenerationService _embeddingService;
-    private readonly IOllamaChatService _ollamaChatService;
 
-    public SearchService(ITextEmbeddingGenerationService embeddingService, IOllamaChatService ollamaChatService)
+    public SearchService(ITextEmbeddingGenerationService embeddingService, QdrantClient qdrantClient)
     {
         _embeddingService = embeddingService;
-        _qdrantClient = new QdrantClient("127.0.0.1", 6334);
-        _ollamaChatService = ollamaChatService;
+        _qdrantClient = qdrantClient;
     }
 
     public async Task<List<SearchResult>> SearchRelevantContentAsync(string query, int limit = 3)

@@ -5,13 +5,22 @@ using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Qdrant.Client;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var openAiKey = builder.Configuration["OpenAI:ApiKey"];
-var modelId = builder.Configuration["OpenAI:ModelId"] ?? "text-embedding-3-small";
+var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
+
+
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var qdrantClient = builder.Configuration["Qdrant:Host"];
+var groqApiKey = builder.Configuration["Groq:ApiKey"] ?? "PLACEHOLDER";
+var groqModel = builder.Configuration["Groq:Model"] ?? "llama3-8b-8192";
+
+var huggingFaceModel = "sentence-transformers/all-mpnet-base-v2";
+var huggingFaceEndpoint = new Uri($"https://api-inference.huggingface.co/models/{huggingFaceModel}");
+var huggingFaceApiKey = builder.Configuration["HuggingFace:ApiKey"];
+var inferenceEndpoint = new Uri("https://api-inference.huggingface.co/");
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -19,8 +28,7 @@ builder.Services.AddSwaggerGen();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
+    options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IIngestionService, IngestionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -29,18 +37,49 @@ builder.Services.AddCors(options => {
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
+builder.Services.AddSingleton<QdrantClient>(sp =>
+{
+    var rawUrl = builder.Configuration["Qdrant:Host"]; 
+    var apiKey = builder.Configuration["Qdrant:ApiKey"];
 
+    var uri = new Uri(rawUrl);
+    var host = uri.Host;
+
+    return new QdrantClient(host: host, apiKey: apiKey, https: true);
+});
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2Support", true);
-builder.Services.AddHttpClient<IOllamaChatService, OllamaChatService>();
-builder.Services.AddKernel()
-    .AddOllamaTextEmbeddingGeneration(
-        modelId: "nomic-embed-text",
-        endpoint: new Uri("http://localhost:11434"))
-    .AddOllamaChatCompletion(
-        modelId: "llama3",
-        endpoint: new Uri("http://localhost:11434"));
+
+builder.Services.AddOpenAIChatCompletion(
+    modelId: groqModel,
+    apiKey: groqApiKey,
+    endpoint: new Uri("https://api.groq.com/openai/v1") 
+);
+#pragma warning disable SKEXP0070
+if (string.IsNullOrWhiteSpace(huggingFaceApiKey))
+{
+    throw new InvalidOperationException("HuggingFace API key missing in configuration (HuggingFace:ApiKey). Please set a valid API key in appsettings or environment variables.");
+}
+
+builder.Services.AddHuggingFaceTextEmbeddingGeneration(
+    model: huggingFaceModel,
+    apiKey: huggingFaceApiKey
+);
+#pragma warning restore SKEXP0070
+//builder.Services.AddHttpClient<IOllamaChatService, OllamaChatService>();
+//builder.Services.AddKernel()
+//    .AddOllamaTextEmbeddingGeneration(
+//        modelId: "nomic-embed-text",
+//        endpoint: new Uri("http://localhost:11434"))
+//    .AddOllamaChatCompletion(
+//        modelId: "llama3",
+//        endpoint: new Uri("http://localhost:11434"));
+
+
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

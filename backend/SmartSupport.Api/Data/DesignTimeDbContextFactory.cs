@@ -7,11 +7,13 @@ namespace SmartSupport.Api.Data
     {
         public AppDbContext CreateDbContext(string[] args)
         {
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json")
+            .Build();
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-
-            
-            optionsBuilder.UseSqlServer("Server=localhost,1433;Database=SmartSupportDb;User Id=sa;Password=SparkFox334$;TrustServerCertificate=True;");
-
+            var connectionString = configuration.GetConnectionString("SupabaseConnection");
+            optionsBuilder.UseNpgsql(connectionString);
             return new AppDbContext(optionsBuilder.Options);
         }
     }

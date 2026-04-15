@@ -17,14 +17,11 @@ public class IngestionService : IIngestionService
     private readonly AppDbContext _dbContext;
     private readonly ITextEmbeddingGenerationService _embeddingService;
     private readonly QdrantClient _qdrantClient;
-    public IngestionService(AppDbContext dbContext, ITextEmbeddingGenerationService embeddingService, IConfiguration configuration)
+    public IngestionService(AppDbContext dbContext, ITextEmbeddingGenerationService embeddingService, QdrantClient qdrantClient)
     {
         _dbContext = dbContext;
         _embeddingService = embeddingService;
-        var host = configuration["Qdrant:Host"] ?? "127.0.0.1";
-        var port = int.Parse(configuration["Qdrant:Port"] ?? "6334");
-
-        _qdrantClient = new QdrantClient(host, port);
+        _qdrantClient = qdrantClient;
     }
 
     [Experimental("SKEXP0050")]
@@ -32,7 +29,7 @@ public class IngestionService : IIngestionService
     {
         try
         {
-            // וודא שהאוסף קיים לפני שמתחילים
+            
             await EnsureCollectionExistsAsync();
 
             var document = new KnowledgeDocument
@@ -89,7 +86,11 @@ public class IngestionService : IIngestionService
     }
     private async Task EnsureCollectionExistsAsync()
     {
-        var response = await _qdrantClient.ListCollectionsAsync();
+        try
+        {
+            // אם זה קורס כאן, ה-Exception יגיד לנו אם זה Timeout, Auth או DNS
+            var response = await _qdrantClient.ListCollectionsAsync();
+            // ... המשך הקוד
         if (!response.Contains("knowledge_base"))
         {
             await _qdrantClient.CreateCollectionAsync("knowledge_base",
@@ -98,6 +99,14 @@ public class IngestionService : IIngestionService
                     Size = 768, 
                     Distance = Distance.Cosine
                 });
+        }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Qdrant Connection Error: {ex.Message}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"Inner: {ex.InnerException.Message}");
+            throw;
         }
     }
 }
