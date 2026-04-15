@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
-import { firstValueFrom } from 'rxjs';
+
 
 @Injectable({
   providedIn: 'root'
@@ -9,16 +9,14 @@ export class ChatService {
   private apiUrl = 'http://localhost:7123/api/AI';
   private authService = inject(SocialAuthService);
 
-  // סיגנלים לניהול מצב האפליקציה
+
   currentResponse = signal<string>('');
   isLoading = signal<boolean>(false);
   history = signal<any[]>([]);
-  sessions = signal<any[]>([]); // רשימת כל השיחות מהשרת
-  currentSessionId = signal<string | null>(null); // ה-ID הפעיל כרגע
+  sessions = signal<any[]>([]); 
+  currentSessionId = signal<string | null>(null); 
 
-  /**
-   * יוצר מזהה סשן חדש (GUID) ומאפס את המסך
-   */
+
   createNewSession(): string {
     const newId = crypto.randomUUID();
     this.currentSessionId.set(newId);
@@ -27,16 +25,12 @@ export class ChatService {
     return newId;
   }
 
-  /**
-   * טוען את כל הסשנים הקודמים של המשתמש מה-API
-   */
-  async loadUserSessions() {
-    try {
-      const user = await firstValueFrom(this.authService.authState);
-      if (!user) return;
 
+  async loadUserSessions() {
+    console.log('ChatService: Starting to load sessions...');
+    try {
       const response = await fetch(`${this.apiUrl}/sessions`, {
-        headers: { 'Authorization': `Bearer ${user.idToken}` }
+        headers: { 'Authorization': `Bearer ${this.idToken}` }
       });
 
       if (response.ok) {
@@ -48,17 +42,12 @@ export class ChatService {
     }
   }
 
-  /**
-   * טוען היסטוריית הודעות עבור סשן ספציפי
-   */
+
   async loadHistory(sessionId: string) {
     this.currentSessionId.set(sessionId);
     try {
-      const user = await firstValueFrom(this.authService.authState);
-      if (!user) return;
-
       const response = await fetch(`${this.apiUrl}/sessions/${sessionId}`, {
-        headers: { 'Authorization': `Bearer ${user.idToken}` }
+        headers: { 'Authorization': `Bearer ${this.idToken}` }
       });
 
       if (response.ok) {
@@ -70,69 +59,71 @@ export class ChatService {
     }
   }
 
-  /**
-   * שליחת שאלה וקבלת תשובה ב-Stream
-   */
+ 
   async askQuestionStream(query: string) {
-    // אם אין סשן פעיל, ניצור אחד לפני השליחה
-    let sessionId = this.currentSessionId();
-    if (!sessionId) {
-      sessionId = this.createNewSession();
-    }
-
-    this.currentResponse.set('');
-    this.isLoading.set(true);
-
-    try {
-      const user = await firstValueFrom(this.authService.authState);
-      if (!user) throw new Error('User not authenticated');
-
-      const url = `${this.apiUrl}/ask-stream?query=${encodeURIComponent(query)}&sessionId=${sessionId}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${user.idToken}` }
-      });
-
-      if (!response.body) throw new Error('No response body');
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        this.currentResponse.update(prev => prev + chunk);
-      }
-
-      // בסיום הסטרים - מרעננים את ההיסטוריה כדי לכלול את ההודעות החדשות שנשמרו ב-DB
-      await this.loadHistory(sessionId);
-      // מרעננים גם את רשימת הסשנים (למקרה שזה סשן חדש שנוצר עכשיו בשרת)
-      await this.loadUserSessions();
-
-    } catch (error) {
-      console.error('Streaming error:', error);
-      this.currentResponse.set('שגיאה בחיבור לשרת ה-AI');
-    } finally {
-      this.isLoading.set(false);
-    }
+  let sessionId = this.currentSessionId();
+  if (!sessionId) {
+    sessionId = this.createNewSession();
   }
 
-  /**
-   * העלאת קובץ לשרת ה-Ingestion
-   */
+  this.currentResponse.set('');
+  this.isLoading.set(true);
+
+  try {
+    const url = `${this.apiUrl}/ask-stream?query=${encodeURIComponent(query)}&sessionId=${sessionId}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${this.idToken}` }
+    });
+
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      let chunk = decoder.decode(value, { stream: true });
+
+
+      chunk = chunk.replace(/^"|"$/g, '') 
+                   .replace(/\\n/g, '\n')
+                   .replace(/\\"/g, '"');
+
+      this.currentResponse.update(prev => prev + chunk);
+    }
+
+
+    await this.loadHistory(sessionId);
+    
+    
+    this.currentResponse.set(''); 
+
+   
+    await this.loadUserSessions();
+
+  } catch (error) {
+    console.error('Streaming error:', error);
+    this.currentResponse.set('שגיאה בחיבור לשרת ה-AI');
+  } finally {
+    this.isLoading.set(false);
+  }
+}
+
+  
   async uploadFile(file: File) {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const user = await firstValueFrom(this.authService.authState);
+
       const response = await fetch('http://localhost:7123/api/Ingestion/upload', {
         method: 'POST',
         headers: {
-          'Authorization': user ? `Bearer ${user.idToken}` : ''
+          'Authorization': `Bearer ${this.idToken}`
         },
         body: formData
       });
@@ -141,5 +132,9 @@ export class ChatService {
       console.error('Upload error:', error);
       return false;
     }
+  }
+
+  private get idToken(): string | null {
+    return localStorage.getItem('idToken');
   }
 }

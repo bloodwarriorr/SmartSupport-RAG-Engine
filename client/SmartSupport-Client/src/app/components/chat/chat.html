@@ -4,34 +4,40 @@
     <span class="status-dot" [class.online]="!chatService.isLoading()"></span>
   </div>
 
-  <div class="chat-history">
-    @for (msg of chatService.history(); track msg.id) {
-      <div class="message" [ngClass]="msg.Role ? 'user' : 'ai'">
-        @if (!msg.Role) { <div class="avatar">AI</div> }
-        <div class="bubble">
-          {{ msg.content }}
-        </div>
-      </div>
-    }
+  <div class="chat-history" #scrollContainer>
+  @for (msg of chatService.history(); track msg.id) {
+    <div class="message" [ngClass]="msg.role === 'user' ? 'user' : 'ai'">
+      @if (msg.role === 'user') { <div class="avatar user-avatar">ME</div> }
+      @if (msg.role !== 'user') { <div class="avatar">AI</div> }
+      <div class="bubble">{{ msg.content }}</div>
+    </div>
+  }
 
-    @if (lastUserQuery) {
-      <div class="message user">
-        <div class="bubble">{{ lastUserQuery }}</div>
-      </div>
-    }
+  @if (chatService.isLoading() && lastUserQuery && !chatService.currentResponse()) {
+    <div class="message user">
+      <div class="avatar user-avatar">ME</div>
+      <div class="bubble">{{ lastUserQuery }}</div>
+    </div>
+  }
 
-    @if (chatService.currentResponse() || chatService.isLoading()) {
-      <div class="message ai">
-        <div class="avatar">AI</div>
-        <div class="bubble">
+  @if (chatService.isLoading() || chatService.currentResponse()) {
+    <div class="message ai">
+      <div class="avatar">AI</div>
+      <div class="bubble">
+        @if (chatService.currentResponse()) {
           {{ chatService.currentResponse() }}
-          @if (chatService.isLoading() && !chatService.currentResponse()) {
-            <span class="typing-dots">...</span>
-          }
-        </div>
+        } 
+        @else if (chatService.isLoading()) {
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        }
       </div>
-    }
-  </div>
+    </div>
+  }
+</div>
 
   <div class="input-area">
     <div class="input-container">

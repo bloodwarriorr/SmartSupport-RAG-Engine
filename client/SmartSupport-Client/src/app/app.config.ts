@@ -1,6 +1,6 @@
-import { ApplicationConfig, importProvidersFrom, InjectionToken } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http'; 
 import { routes } from './app.routes';
 import { 
   SocialLoginModule, 
@@ -8,22 +8,29 @@ import {
   SocialAuthService 
 } from '@abacritt/angularx-social-login';
 import { environment } from '../environments/environment';
+import { authInterceptor } from '../app/services/auth-interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(),
+    
+    
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
+    
     importProvidersFrom(SocialLoginModule),
     
-    // פתרון ה-InjectionToken לגרסאות מתקדמות
     {
-      provide: 'SocialAuthServiceConfig', // נשאר עבור הספרייה
+      provide: 'SocialAuthServiceConfig', 
       useValue: {
         autoLogin: false,
         providers: [
           {
             id: GoogleLoginProvider.PROVIDER_ID,
-            provider: new GoogleLoginProvider(environment.googleClientId)
+            provider: new GoogleLoginProvider(environment.googleClientId),
+            oneTapEnabled: false,
+            prompt: ''
           }
         ],
         onError: (err: any) => console.error('Auth Error:', err)

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } fr
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../services/chat';
+import { Router } from '@angular/router'; 
 
 @Component({
   selector: 'app-chat',
@@ -10,48 +11,66 @@ import { ChatService } from '../../services/chat';
   templateUrl: './chat.html',
   styleUrl: './chat.scss'
 })
-export class ChatComponent implements OnInit, AfterViewChecked {
+export class Chat implements OnInit, AfterViewChecked {
   chatService = inject(ChatService);
+  router = inject(Router); // הזרקת הראוטר
   
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   lastUserQuery: string = '';
   userQuery: string = '';
   isAdmin: boolean = true;
-
   ngOnInit() {
-    // 1. טעינת כל הסשנים הקיימים של המשתמש מהשרת
-    this.chatService.loadUserSessions().then(() => {
-      const existingSessions = this.chatService.sessions();
-      
-      if (existingSessions && existingSessions.length > 0) {
-        // 2. אם יש היסטוריה, נטען אוטומטית את הסשן האחרון (הכי חדש)
-        const mostRecentSessionId = existingSessions[0].id;
-        this.chatService.loadHistory(mostRecentSessionId);
-      } else {
-        // 3. אם זה משתמש חדש בלי שיחות, ניצור לו סשן (GUID) חדש
-        this.chatService.createNewSession();
-      }
-    });
+
+    const savedToken = localStorage.getItem('idToken');
+
+    if (!savedToken) {
+      console.warn('ChatComponent: No token found, redirecting to login');
+      this.router.navigate(['/login']);
+      return;
+    }
+
+
+    this.chatService.loadUserSessions()
+      .then(() => {
+        const existingSessions = this.chatService.sessions();
+        
+        if (existingSessions && existingSessions.length > 0) {
+          
+          const mostRecentSessionId = existingSessions[0].id;
+          this.chatService.loadHistory(mostRecentSessionId);
+        } else {
+          
+          this.chatService.createNewSession();
+        }
+      })
+      .catch((err) => {
+        console.error('ChatComponent: Error loading sessions', err);
+        
+        
+        if (err.status === 401) {
+          localStorage.clear();
+          this.router.navigate(['/login']);
+        } else {
+         
+          this.chatService.createNewSession();
+        }
+      });
   }
+
 
   ngAfterViewChecked() {
     this.scrollToBottom();
   }
 
   send() {
-    // וודא שיש סשן פעיל לפני השליחה (הסרביס מנהל את ה-currentSessionId)
     if (this.userQuery.trim() && !this.chatService.isLoading()) {
       this.lastUserQuery = this.userQuery;
-      
-      // שליחת השאלה (הסרביס כבר יודע להשתמש ב-currentSessionId() שהגדרנו)
       this.chatService.askQuestionStream(this.userQuery);
-      
       this.userQuery = ''; 
     }
   }
 
-  // פונקציה לממשק (למשל עבור כפתור "צ'אט חדש")
   startNewChat() {
     this.lastUserQuery = '';
     this.chatService.createNewSession();
