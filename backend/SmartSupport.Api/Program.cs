@@ -37,10 +37,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("VercelPolicy", policy =>
     {
-        policy.WithOrigins("https://smart-support-rag-engine.vercel.app") 
+        policy.AllowAnyOrigin() 
               .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials(); 
+              .AllowAnyHeader();
+        
     });
 });
 builder.Services.AddSingleton<QdrantClient>(sp =>
