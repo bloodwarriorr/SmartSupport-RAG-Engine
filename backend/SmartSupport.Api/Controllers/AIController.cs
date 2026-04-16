@@ -103,9 +103,17 @@ public class AIController : ControllerBase
     public async Task<IActionResult> GetSessionMessages(Guid sessionId)
     {
         var messages = await _context.ChatMessages
-            .Where(m => m.ChatSessionId == sessionId)
-            .OrderBy(m => m.Timestamp)
-            .ToListAsync();
+         .AsNoTracking()
+         .Where(m => m.ChatSessionId == sessionId)
+         .OrderBy(m => m.Timestamp)
+         .Select(m => new {
+             m.Id,
+             m.Content,
+             m.Role,
+             m.Timestamp,
+             m.ChatSessionId
+         })
+         .ToListAsync();
 
         return Ok(messages);
     }
