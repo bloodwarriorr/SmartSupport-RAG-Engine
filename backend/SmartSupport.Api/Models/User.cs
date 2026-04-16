@@ -25,7 +25,7 @@ namespace SmartSupport.Api.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        // קשר למשתמש
+        
         public int UserId { get; set; } 
         public User User { get; set; }
 

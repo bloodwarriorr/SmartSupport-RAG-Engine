@@ -88,9 +88,9 @@ public class IngestionService : IIngestionService
     {
         try
         {
-            // אם זה קורס כאן, ה-Exception יגיד לנו אם זה Timeout, Auth או DNS
+           
             var response = await _qdrantClient.ListCollectionsAsync();
-            // ... המשך הקוד
+           
         if (!response.Contains("knowledge_base"))
         {
             await _qdrantClient.CreateCollectionAsync("knowledge_base",

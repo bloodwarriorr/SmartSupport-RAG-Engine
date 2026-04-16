@@ -14,7 +14,7 @@ public class HuggingFaceEmbeddingService : ITextEmbeddingGenerationService
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-        // חשוב: חלק מהשרתים של HF חוסמים בקשות ללא User-Agent
+        
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "DotNetBackend");
     }
 
@@ -23,10 +23,10 @@ public class HuggingFaceEmbeddingService : ITextEmbeddingGenerationService
         Kernel? kernel = null,
         CancellationToken cancellationToken = default)
     {
-        // הכתובת המדויקת שעבדה ב-Postman
+        
         var url = $"https://router.huggingface.co/hf-inference/models/{_modelId}/pipeline/feature-extraction";
 
-        // מבנה הגוף שנשלח ב-Postman
+        
         var requestBody = new
         {
             inputs = data,
@@ -41,12 +41,12 @@ public class HuggingFaceEmbeddingService : ITextEmbeddingGenerationService
             throw new Exception($"HuggingFace Error: {response.StatusCode}. Details: {error}");
         }
 
-        // קבלת המטריצה (מערך של מערכים)
+       
         var result = await response.Content.ReadFromJsonAsync<float[][]>();
 
         if (result == null) return new List<ReadOnlyMemory<float>>();
 
-        // המרה לפורמט של Semantic Kernel
+        
         return result.Select(v => new ReadOnlyMemory<float>(v)).ToList();
     }
 
