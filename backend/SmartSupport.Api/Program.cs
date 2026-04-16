@@ -19,10 +19,9 @@ var qdrantClient = builder.Configuration["Qdrant:Host"];
 var groqApiKey = builder.Configuration["Groq:ApiKey"] ?? "PLACEHOLDER";
 var groqModel = builder.Configuration["Groq:Model"] ?? "llama3-8b-8192";
 
-var huggingFaceModel = "BAAI/bge-small-en-v1.5";
-var huggingFaceEndpoint = new Uri($"https://api-inference.huggingface.co/models/{huggingFaceModel}");
+
 var huggingFaceApiKey = builder.Configuration["HuggingFace:ApiKey"];
-var inferenceEndpoint = new Uri("https://api-inference.huggingface.co/");
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -34,9 +33,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IIngestionService, IngestionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddCors(options => {
-    options.AddDefaultPolicy(policy => {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LivePolicy", policy =>
+    {
+        policy.WithOrigins("https://smart-support-rag-engine.vercel.app/") 
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); 
     });
 });
 builder.Services.AddSingleton<QdrantClient>(sp =>
@@ -114,7 +118,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 var app = builder.Build();
-app.UseCors();
+app.UseCors("LivePolicy");
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
