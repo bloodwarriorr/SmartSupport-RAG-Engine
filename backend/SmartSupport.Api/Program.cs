@@ -35,7 +35,7 @@ builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("LivePolicy", policy =>
+    options.AddPolicy("VercelPolicy", policy =>
     {
         policy.WithOrigins("https://smart-support-rag-engine.vercel.app") 
               .AllowAnyMethod()
