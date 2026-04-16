@@ -4,7 +4,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Embeddings;
-using Npgsql;
 using Qdrant.Client;
 using SmartSupport.Api.Data;
 using SmartSupport.Api.Interfaces;
@@ -19,7 +18,7 @@ var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var qdrantClient = builder.Configuration["Qdrant:Host"];
 var groqApiKey = builder.Configuration["Groq:ApiKey"] ?? "PLACEHOLDER";
 var groqModel = builder.Configuration["Groq:Model"] ?? "llama3-8b-8192";
-var npgsqlBuilder = new NpgsqlDataSourceBuilder(connectionString);
+
 
 var huggingFaceApiKey = builder.Configuration["HuggingFace:ApiKey"];
 
@@ -28,9 +27,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-npgsqlBuilder.UseLoggerFactory(LoggerFactory.Create(builder => builder.AddConsole()));
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(npgsqlBuilder.Build()));
+    options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IIngestionService, IngestionService>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<IChatService, ChatService>();
