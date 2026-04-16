@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Embeddings;
+using Qdrant.Client;
 using SmartSupport.Api.Data;
 using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Qdrant.Client;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -17,7 +19,7 @@ var qdrantClient = builder.Configuration["Qdrant:Host"];
 var groqApiKey = builder.Configuration["Groq:ApiKey"] ?? "PLACEHOLDER";
 var groqModel = builder.Configuration["Groq:Model"] ?? "llama3-8b-8192";
 
-var huggingFaceModel = "sentence-transformers/all-mpnet-base-v2";
+var huggingFaceModel = "BAAI/bge-small-en-v1.5";
 var huggingFaceEndpoint = new Uri($"https://api-inference.huggingface.co/models/{huggingFaceModel}");
 var huggingFaceApiKey = builder.Configuration["HuggingFace:ApiKey"];
 var inferenceEndpoint = new Uri("https://api-inference.huggingface.co/");
@@ -57,16 +59,14 @@ builder.Services.AddOpenAIChatCompletion(
     apiKey: groqApiKey,
     endpoint: new Uri("https://api.groq.com/openai/v1") 
 );
-#pragma warning disable SKEXP0070
 if (string.IsNullOrWhiteSpace(huggingFaceApiKey))
 {
     throw new InvalidOperationException("HuggingFace API key missing in configuration (HuggingFace:ApiKey). Please set a valid API key in appsettings or environment variables.");
 }
 
-builder.Services.AddHuggingFaceTextEmbeddingGeneration(
-    model: huggingFaceModel,
-    apiKey: huggingFaceApiKey
-);
+#pragma warning disable SKEXP0010
+builder.Services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
+    new HuggingFaceEmbeddingService("sentence-transformers/all-MiniLM-L6-v2", huggingFaceApiKey));
 #pragma warning restore SKEXP0070
 //builder.Services.AddHttpClient<IOllamaChatService, OllamaChatService>();
 //builder.Services.AddKernel()

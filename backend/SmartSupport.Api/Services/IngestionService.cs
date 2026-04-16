@@ -96,7 +96,7 @@ public class IngestionService : IIngestionService
             await _qdrantClient.CreateCollectionAsync("knowledge_base",
                 new VectorParams
                 {
-                    Size = 768, 
+                    Size = 384, 
                     Distance = Distance.Cosine
                 });
         }
