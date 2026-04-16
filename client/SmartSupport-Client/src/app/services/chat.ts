@@ -1,12 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { SocialAuthService } from '@abacritt/angularx-social-login';
 
-
+import { environment } from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private apiUrl = 'http://localhost:7123/api/AI';
+  private apiUrl = `${environment.API_URL}/api/AI`;
   private authService = inject(SocialAuthService);
 
 
@@ -60,7 +60,7 @@ export class ChatService {
   }
 
  
-  async askQuestionStream(query: string) {
+async askQuestionStream(query: string) {
   let sessionId = this.currentSessionId();
   if (!sessionId) {
     sessionId = this.createNewSession();
@@ -81,33 +81,49 @@ export class ChatService {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let accumulatedBuffer = ''; // באפר שיחזיק שאריות טקסט
 
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
 
-      let chunk = decoder.decode(value, { stream: true });
+      // 1. הוספת הצ'אנק החדש לבאפר
+      accumulatedBuffer += decoder.decode(value, { stream: true });
 
+      // 2. ניקוי "שאריות" של מערך ה-JSON (התווים [ , ])
+      // אנחנו מחפשים דפוס של מחרוזת בתוך גרשיים
+      const jsonStringPattern = /"((?:[^"\\]|\\.)*)"/g;
+      let match;
 
-      chunk = chunk.replace(/^"|"$/g, '') 
-                   .replace(/\\n/g, '\n')
-                   .replace(/\\"/g, '"');
+      while ((match = jsonStringPattern.exec(accumulatedBuffer)) !== null) {
+        // match[1] מכיל את הטקסט הנקי ללא הגרשיים החיצוניים
+        let cleanToken = match[1];
 
-      this.currentResponse.update(prev => prev + chunk);
+        // טיפול בתווים מיוחדים (כמו \n או \") שהגיעו כטקסט
+        cleanToken = cleanToken
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .replace(/\\u([\da-f]{4})/gi, (match, grp) => {
+             return String.fromCharCode(parseInt(grp, 16));
+          });
+
+       
+        this.currentResponse.update(prev => prev + cleanToken);
+        
+        
+        accumulatedBuffer = accumulatedBuffer.slice(jsonStringPattern.lastIndex);
+        jsonStringPattern.lastIndex = 0; 
+      }
     }
 
-
+    
     await this.loadHistory(sessionId);
-    
-    
     this.currentResponse.set(''); 
-
-   
     await this.loadUserSessions();
 
   } catch (error) {
     console.error('Streaming error:', error);
-    this.currentResponse.set('שגיאה בחיבור לשרת ה-AI');
+    this.currentResponse.set('Failed to connect to AI service');
   } finally {
     this.isLoading.set(false);
   }
@@ -120,7 +136,7 @@ export class ChatService {
 
     try {
 
-      const response = await fetch('http://localhost:7123/api/Ingestion/upload', {
+      const response = await fetch(`${environment.API_URL}/api/Ingestion/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.idToken}`

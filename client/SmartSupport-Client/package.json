@@ -12,12 +12,14 @@
   "packageManager": "npm@11.11.0",
   "dependencies": {
     "@abacritt/angularx-social-login": "^2.4.0",
+    "@angular/animations": "^21.2.9",
     "@angular/common": "^21.2.0",
     "@angular/compiler": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "ngx-toastr": "^20.0.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../services/chat';
 import { Router } from '@angular/router'; 
-
+import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-chat',
   standalone: true,
@@ -13,8 +13,8 @@ import { Router } from '@angular/router';
 })
 export class Chat implements OnInit, AfterViewChecked {
   chatService = inject(ChatService);
-  router = inject(Router); // הזרקת הראוטר
-  
+  router = inject(Router); 
+  private toastr = inject(ToastrService);
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   lastUserQuery: string = '';
@@ -89,9 +89,9 @@ export class Chat implements OnInit, AfterViewChecked {
     if (file) {
       const success = await this.chatService.uploadFile(file);
       if (success) {
-        alert('File uploaded successfully!');
+        this.toastr.success('File uploaded successfully!');
       } else {
-        alert('Failed to upload file.');
+        this.toastr.success('Failed to upload file.');
       }
     }
   }
