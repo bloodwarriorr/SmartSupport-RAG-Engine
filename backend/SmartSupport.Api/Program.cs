@@ -37,7 +37,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("LivePolicy", policy =>
     {
-        policy.WithOrigins("https://smart-support-rag-engine.vercel.app/") 
+        policy.WithOrigins("https://smart-support-rag-engine.vercel.app") 
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials(); 
@@ -118,8 +118,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 var app = builder.Build();
-app.UseCors("LivePolicy");
 app.UseRouting();
+app.UseCors("VercelPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
