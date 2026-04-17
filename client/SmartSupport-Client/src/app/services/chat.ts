@@ -27,7 +27,7 @@ export class ChatService {
 
 
   async loadUserSessions() {
-    console.log('ChatService: Starting to load sessions...');
+   
     try {
       const response = await fetch(`${this.apiUrl}/sessions`, {
         headers: { 'Authorization': `Bearer ${this.idToken}` }

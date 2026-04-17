@@ -19,7 +19,6 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.authService.authState.subscribe((user: any) => {
       if (user) {
-        console.log('User logged in:', user);
         this.router.navigate(['/chat']);
       }
     });
