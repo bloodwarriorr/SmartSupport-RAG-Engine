@@ -44,6 +44,12 @@
         <span class="docs-link-text">{{ isAdmin() ? 'Manage documents' : 'Documents' }}</span>
         <span class="docs-link-count">{{ org()?.documentCount ?? 0 }}</span>
       </a>
+      @if (isAdmin()) {
+        <a routerLink="/feedback" class="docs-link">
+          <span class="docs-link-icon">📊</span>
+          <span class="docs-link-text">Answer feedback</span>
+        </a>
+      }
     </div>
   </aside>
 

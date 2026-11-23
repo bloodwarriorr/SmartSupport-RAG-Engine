@@ -1,0 +1,201 @@
+$bg: #171717;
+$surface: #212121;
+$surface-2: #2a2a2a;
+$border: #303030;
+$text: #ececec;
+$muted: #a1a1aa;
+$accent: #10a37f;
+
+:host { display: block; width: 100%; }
+
+.fb-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: $bg;
+  color: $text;
+}
+
+.fb-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  background: rgba($bg, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid $border;
+
+  h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+  p { margin: 2px 0 0; color: $muted; font-size: 0.85rem; }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px 7px 8px;
+  border: 1px solid #3d3d3d;
+  border-radius: 8px;
+  color: #c5c5d2;
+  text-decoration: none;
+  font-size: 0.9rem;
+  &:hover { background: $surface-2; color: $text; }
+}
+
+.fb-content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat {
+  padding: 18px;
+  border-radius: 14px;
+  background: $surface;
+  border: 1px solid $border;
+
+  .stat-value { font-size: 1.8rem; font-weight: 700; }
+  .stat-value.up { color: #3ccfa5; }
+  .stat-value.down { color: #fca5a5; }
+  .stat-label { margin-top: 2px; color: $muted; font-size: 0.85rem; }
+}
+
+.filters {
+  display: inline-flex;
+  margin: 28px 0 16px;
+  padding: 4px;
+  gap: 2px;
+  border-radius: 12px;
+  background: $surface;
+  border: 1px solid $border;
+
+  button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: $muted;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    &:hover { color: $text; }
+    &.active { background: #343434; color: $text; }
+  }
+}
+
+.hint {
+  margin: 0 0 14px;
+  color: $muted;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.state {
+  padding: 32px 16px;
+  text-align: center;
+  color: $muted;
+  &.empty { border: 1px dashed $border; border-radius: 14px; }
+  .empty-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  p { margin: 0; }
+}
+
+.fb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.fb-item {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: $surface;
+  border: 1px solid $border;
+
+  &.negative { border-left: 3px solid rgba(239, 68, 68, 0.7); }
+}
+
+.fb-top {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.rating { font-size: 1.05rem; line-height: 1.4; }
+
+.question {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.answer {
+  margin: 10px 0 4px 30px;
+  color: #c5c5d2;
+  font-size: 0.93rem;
+  line-height: 1.55;
+
+  &.clamped {
+    max-height: 4.8em;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  }
+}
+
+.link-btn {
+  margin-left: 30px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: $accent;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+
+.fb-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0 30px;
+  font-size: 0.8rem;
+  color: $muted;
+}
+
+.meta-sources { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.source-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #3d3d3d;
+  background: #262626;
+  color: #c5c5d2;
+}
+
+.no-sources { color: #fca5a5; }
+
+@media (max-width: 700px) {
+  .fb-header { padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); gap: 12px; }
+  .back-btn span { display: none; }
+  .back-btn { padding: 7px; }
+  .fb-content { padding: 18px 14px 32px; }
+  .stats { gap: 8px; }
+  .stat { padding: 12px; .stat-value { font-size: 1.4rem; } }
+  .filters { display: flex; button { flex: 1; padding: 8px 6px; font-size: 0.82rem; } }
+  .answer, .link-btn, .fb-meta { margin-left: 0; }
+}

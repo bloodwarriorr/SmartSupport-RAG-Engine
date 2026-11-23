@@ -38,6 +38,15 @@ export const orgGuard: CanActivateFn = async () => {
   return result.org ? true : router.parseUrl('/onboarding');
 };
 
+/** Admin-only pages: members are sent back to the chat. (The API checks the role too.) */
+export const adminGuard: CanActivateFn = async () => {
+  const router = inject(Router);
+  const result = await loadMeOrRedirect();
+  if (result === false || result instanceof UrlTree) return result;
+  if (!result.org) return router.parseUrl('/onboarding');
+  return result.org.role === 'Admin' ? true : router.parseUrl('/chat');
+};
+
 /** The create/join screen is only for users who don't have an organization yet. */
 export const noOrgGuard: CanActivateFn = async () => {
   const router = inject(Router);

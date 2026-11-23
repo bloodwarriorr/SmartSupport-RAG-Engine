@@ -1,0 +1,86 @@
+<div class="fb-page">
+  <header class="fb-header">
+    <a routerLink="/chat" class="back-btn" title="Back to chat">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
+      </svg>
+      <span>Chat</span>
+    </a>
+    <div class="header-text">
+      <h1>Answer feedback</h1>
+      <p dir="auto">{{ org()?.name }} · how members rated the answers</p>
+    </div>
+  </header>
+
+  <main class="fb-content">
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-value">{{ satisfaction() === null ? '–' : satisfaction() + '%' }}</div>
+        <div class="stat-label">rated helpful</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value up">{{ summary().positive }}</div>
+        <div class="stat-label">👍 helpful</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value down">{{ summary().negative }}</div>
+        <div class="stat-label">👎 not helpful</div>
+      </div>
+    </section>
+
+    <div class="filters" role="tablist">
+      @for (f of filters; track f.value) {
+        <button type="button" role="tab" [class.active]="filter() === f.value" [attr.aria-selected]="filter() === f.value" (click)="setFilter(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="state">Loading…</div>
+    } @else if (!items().length) {
+      <div class="state empty">
+        <div class="empty-icon">{{ filter() === 'negative' ? '🎉' : '💬' }}</div>
+        @if (filter() === 'negative') {
+          <p>No answers marked not helpful.</p>
+        } @else if (total() === 0) {
+          <p>No ratings yet. Members can rate answers with 👍 / 👎 under each reply.</p>
+        } @else {
+          <p>Nothing here yet.</p>
+        }
+      </div>
+    } @else {
+      @if (filter() === 'negative') {
+        <p class="hint">Tip: an answer is often unhelpful because the documents don't cover the question. Check its sources, then add or update a document.</p>
+      }
+      <ul class="fb-list">
+        @for (item of items(); track item.id) {
+          <li class="fb-item" [class.negative]="item.feedback === -1">
+            <div class="fb-top">
+              <span class="rating" [class.down]="item.feedback === -1">{{ item.feedback === 1 ? '👍' : '👎' }}</span>
+              <div class="question" dir="auto">{{ item.question || '(question not found)' }}</div>
+            </div>
+
+            <div class="answer markdown bubble" dir="auto" [class.clamped]="!isExpanded(item.id)" [innerHTML]="item.answer | markdown"></div>
+            <button type="button" class="link-btn" (click)="toggle(item.id)">
+              {{ isExpanded(item.id) ? 'Show less' : 'Show full answer' }}
+            </button>
+
+            <div class="fb-meta">
+              @if (item.sources.length) {
+                <span class="meta-sources">
+                  @for (src of item.sources; track src.fileName) {
+                    <span class="source-chip" dir="auto">📄 {{ src.fileName }}</span>
+                  }
+                </span>
+              } @else {
+                <span class="no-sources">No matching documents found</span>
+              }
+              <span class="meta-who"><bdi>{{ item.user }}</bdi> · {{ asDate(item.timestamp) | date: 'MMM d, HH:mm' }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </main>
+</div>

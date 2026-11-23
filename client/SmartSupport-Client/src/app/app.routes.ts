@@ -4,9 +4,10 @@ import { Chat } from './components/chat/chat';
 import { Onboarding } from './components/onboarding/onboarding';
 import { JoinOrg } from './components/join/join';
 import { Documents } from './components/documents/documents';
+import { Feedback } from './components/feedback/feedback';
 import { authGuard } from './guards/auth-guard';
 import { guestGuard } from './guards/guest-guard';
-import { orgGuard, noOrgGuard } from './guards/org-guard';
+import { orgGuard, noOrgGuard, adminGuard } from './guards/org-guard';
 
 export const routes: Routes = [
   { path: '', component: LoginComponent, canActivate: [guestGuard], pathMatch: 'full' },
@@ -16,5 +17,6 @@ export const routes: Routes = [
   { path: 'onboarding', component: Onboarding, canActivate: [authGuard, noOrgGuard] },
   { path: 'chat', component: Chat, canActivate: [authGuard, orgGuard] },
   { path: 'documents', component: Documents, canActivate: [authGuard, orgGuard] },
+  { path: 'feedback', component: Feedback, canActivate: [authGuard, adminGuard] },
   { path: '**', redirectTo: '' }
 ];
