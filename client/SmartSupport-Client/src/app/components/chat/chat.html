@@ -13,7 +13,7 @@
           } @else {
             <span class="user-initial">{{ user.name.charAt(0) }}</span>
           }
-          <span class="user-name">{{ user.name }}</span>
+          <span class="user-name" dir="auto">{{ user.name }}</span>
         </div>
       }
       <button type="button" class="logout-btn" (click)="logout()" title="Log out">
