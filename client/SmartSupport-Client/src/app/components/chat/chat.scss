@@ -722,3 +722,72 @@ $sidebar-width: 270px;
     font-weight: 600;
   }
 }
+
+/* ---------- Chat rename / delete ---------- */
+.session-row {
+  position: relative;
+
+  .session-item { padding-right: 62px; }
+
+  .session-actions {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  &:hover .session-actions,
+  &:focus-within .session-actions,
+  &.active .session-actions { opacity: 1; }
+}
+
+.session-action {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #8e8ea0;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: #333; color: #ececec; }
+  &.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// Touch screens have no hover: always show the actions.
+@media (hover: none) {
+  .session-row .session-actions { opacity: 1; }
+}
+
+/* ---------- Copy / feedback under answers ---------- */
+.answer-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.action-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #8e8ea0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: #2a2a2a; color: #ececec; }
+  &.active-up { color: #3ccfa5; }
+  &.active-down { color: #fca5a5; }
+}

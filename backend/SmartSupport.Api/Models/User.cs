@@ -54,5 +54,8 @@ namespace SmartSupport.Api.Models
 
         /// <summary>Assistant messages only: JSON list of the documents the answer was based on.</summary>
         public string? Sources { get; set; }
+
+        /// <summary>Assistant messages only: the user's rating, 1 (helpful) or -1 (not helpful). Null if not rated.</summary>
+        public int? Feedback { get; set; }
     }
 }

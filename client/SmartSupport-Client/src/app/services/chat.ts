@@ -26,6 +26,47 @@ export class ChatService {
     this.currentSessionId.set(null);
   }
 
+  async renameSession(sessionId: string, title: string): Promise<boolean> {
+    const response = await fetch(`${this.apiUrl}/sessions/${sessionId}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${this.idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    if (!response.ok) return false;
+    this.sessions.update(list => list.map(s => (s.id === sessionId ? { ...s, title } : s)));
+    return true;
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const response = await fetch(`${this.apiUrl}/sessions/${sessionId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${this.idToken}` }
+    });
+    if (!response.ok) return false;
+    this.sessions.update(list => list.filter(s => s.id !== sessionId));
+    if (this.currentSessionId() === sessionId) this.createNewSession();
+    return true;
+  }
+
+  /** 1 = helpful, -1 = not helpful, 0 = clear. Updates the message right away and rolls back if saving fails. */
+  async rateMessage(messageId: number, value: 1 | -1 | 0): Promise<boolean> {
+    const previous = this.history().find(m => m.id === messageId)?.feedback ?? null;
+    const setFeedback = (feedback: number | null) =>
+      this.history.update(list => list.map(m => (m.id === messageId ? { ...m, feedback } : m)));
+
+    setFeedback(value === 0 ? null : value);
+    try {
+      const response = await fetch(`${this.apiUrl}/messages/${messageId}/feedback`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${this.idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value })
+      });
+      if (response.ok) return true;
+    } catch {}
+    setFeedback(previous);
+    return false;
+  }
+
   createNewSession(): string {
     const newId = crypto.randomUUID();
     this.currentSessionId.set(newId);

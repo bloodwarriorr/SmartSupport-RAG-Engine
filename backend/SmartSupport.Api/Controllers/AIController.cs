@@ -159,7 +159,8 @@ public class AIController : ControllerBase
              m.Role,
              m.Timestamp,
              m.ChatSessionId,
-             m.Sources
+             m.Sources,
+             m.Feedback
          })
          .ToListAsync();
 
@@ -170,7 +171,64 @@ public class AIController : ControllerBase
             m.Role,
             m.Timestamp,
             m.ChatSessionId,
-            Sources = ParseSources(m.Sources)
+            Sources = ParseSources(m.Sources),
+            m.Feedback
         }));
+    }
+
+    public record RenameSessionRequest(string Title);
+    public record FeedbackRequest(int Value);
+
+    /// <summary>Renames one of the caller's chats.</summary>
+    [HttpPatch("sessions/{sessionId}")]
+    public async Task<IActionResult> RenameSession(Guid sessionId, [FromBody] RenameSessionRequest request)
+    {
+        var title = request.Title?.Trim() ?? string.Empty;
+        if (title.Length == 0 || title.Length > 100)
+            return BadRequest(new { message = "Title must be 1-100 characters." });
+
+        var session = await FindOwnSessionAsync(sessionId);
+        if (session == null) return NotFound();
+
+        session.Title = title;
+        await _context.SaveChangesAsync();
+        return Ok(new { session.Id, session.Title, session.CreatedAt });
+    }
+
+    /// <summary>Deletes one of the caller's chats and its messages.</summary>
+    [HttpDelete("sessions/{sessionId}")]
+    public async Task<IActionResult> DeleteSession(Guid sessionId)
+    {
+        var session = await FindOwnSessionAsync(sessionId);
+        if (session == null) return NotFound();
+
+        _context.ChatSessions.Remove(session); // messages are deleted by cascade
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Rates an answer: 1 = helpful, -1 = not helpful, 0 = clear the rating.</summary>
+    [HttpPost("messages/{messageId:int}/feedback")]
+    public async Task<IActionResult> SetFeedback(int messageId, [FromBody] FeedbackRequest request)
+    {
+        if (request.Value is not (-1 or 0 or 1))
+            return BadRequest(new { message = "Value must be 1, -1 or 0." });
+
+        var googleId = OrgAccessService.GetGoogleId(User);
+        var message = await _context.ChatMessages
+            .Where(m => m.Id == messageId && m.Role == "assistant")
+            .Where(m => _context.ChatSessions.Any(s => s.Id == m.ChatSessionId && s.User.GoogleId == googleId))
+            .FirstOrDefaultAsync();
+        if (message == null) return NotFound();
+
+        message.Feedback = request.Value == 0 ? null : request.Value;
+        await _context.SaveChangesAsync();
+        return Ok(new { message.Id, message.Feedback });
+    }
+
+    private Task<ChatSession?> FindOwnSessionAsync(Guid sessionId)
+    {
+        var googleId = OrgAccessService.GetGoogleId(User);
+        return _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.User.GoogleId == googleId);
     }
 }

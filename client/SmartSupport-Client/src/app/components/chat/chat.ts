@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { getSessionUser } from '../../services/auth-session';
 import { OrgService, apiErrorMessage } from '../../services/org';
 import { LogoutService } from '../../services/logout';
+import { MarkdownPipe } from '../../pipes/markdown.pipe';
 
 const swalTheme = {
   background: '#212121',
@@ -23,7 +24,7 @@ function escapeHtml(value: string): string {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [FormsModule, CommonModule, RouterLink],
+  imports: [FormsModule, CommonModule, RouterLink, MarkdownPipe],
   templateUrl: './chat.html',
   styleUrl: './chat.scss'
 })
@@ -246,6 +247,70 @@ export class Chat implements OnInit, AfterViewChecked {
     const key = `${messageId}:${index}`;
     if (this.openSources.has(key)) this.openSources.delete(key);
     else this.openSources.add(key);
+  }
+
+  // ---------- Chat rename / delete ----------
+
+  async renameSession(session: { id: string; title: string }) {
+    const result = await Swal.fire({
+      ...swalTheme,
+      title: 'Rename chat',
+      input: 'text',
+      inputValue: session.title,
+      inputAttributes: { maxlength: '100', 'aria-label': 'Chat name' },
+      showCancelButton: true,
+      confirmButtonText: 'Save',
+      inputValidator: value => (!value?.trim() ? 'Please enter a name.' : null)
+    });
+    if (!result.isConfirmed) return;
+
+    const title = String(result.value).trim();
+    if (title === session.title) return;
+    const ok = await this.chatService.renameSession(session.id, title).catch(() => false);
+    if (!ok) this.toastr.error('Could not rename the chat.');
+  }
+
+  async deleteSession(session: { id: string; title: string }) {
+    const result = await Swal.fire({
+      ...swalTheme,
+      title: 'Delete this chat?',
+      html: `<b>${escapeHtml(session.title || 'New chat')}</b> and all its messages will be deleted. This can't be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      confirmButtonColor: '#dc2626'
+    });
+    if (!result.isConfirmed) return;
+
+    const ok = await this.chatService.deleteSession(session.id).catch(() => false);
+    if (ok) {
+      this.lastUserQuery = '';
+      this.toastr.success('Chat deleted');
+    } else {
+      this.toastr.error('Could not delete the chat.');
+    }
+  }
+
+  // ---------- Answer actions ----------
+
+  copiedId: number | null = null;
+
+  async copyAnswer(message: { id: number; content: string }) {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      this.copiedId = message.id;
+      setTimeout(() => { if (this.copiedId === message.id) this.copiedId = null; }, 1500);
+    } catch {
+      this.toastr.error('Could not copy to the clipboard.');
+    }
+  }
+
+  async rate(message: { id: number; feedback?: number | null }, value: 1 | -1) {
+    // Clicking the same thumb again clears the rating.
+    const next = message.feedback === value ? 0 : value;
+    const ok = await this.chatService.rateMessage(message.id, next);
+    if (!ok) this.toastr.error('Could not save your feedback.');
+    else if (next === -1) this.toastr.info('Thanks, this helps us improve the answers.');
   }
 
   toggleSidebar() {

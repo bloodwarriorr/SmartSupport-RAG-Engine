@@ -37,6 +37,9 @@ namespace SmartSupport.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("Feedback")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
