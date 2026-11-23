@@ -5,6 +5,7 @@ using SmartSupport.Api.Interfaces;
 using SmartSupport.Api.Models;
 using SmartSupport.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 namespace SmartSupport.Api.Controllers;
 
 [Authorize]
@@ -12,6 +13,18 @@ namespace SmartSupport.Api.Controllers;
 [Route("api/[controller]")]
 public class AIController : ControllerBase
 {
+    // How many earlier messages of a chat the model sees (5 questions + 5 answers).
+    private const int MemoryMessageCount = 10;
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private static List<SourceRef> ParseSources(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return new List<SourceRef>();
+        try { return JsonSerializer.Deserialize<List<SourceRef>>(json, JsonOptions) ?? new List<SourceRef>(); }
+        catch (JsonException) { return new List<SourceRef>(); }
+    }
+
     private readonly ISearchService _searchService;
     private readonly IChatService _chatService;
     private readonly AppDbContext _context;
@@ -69,6 +82,19 @@ public class AIController : ControllerBase
             yield break;
         }
 
+        // Conversation memory: the last few messages of this chat, oldest first (loaded before saving the new question).
+        var history = (await _context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.ChatSessionId == sessionId)
+                .OrderByDescending(m => m.Timestamp)
+                .Take(MemoryMessageCount)
+                .Select(m => new { m.Role, m.Content })
+                .ToListAsync())
+            .AsEnumerable()
+            .Reverse()
+            .Select(m => new ChatTurn(m.Role, m.Content.Length > 2000 ? m.Content[..2000] : m.Content))
+            .ToList();
+
         var userMessage = new ChatMessage
         {
             ChatSessionId = sessionId,
@@ -79,8 +105,10 @@ public class AIController : ControllerBase
         _context.ChatMessages.Add(userMessage);
         await _context.SaveChangesAsync();
 
+        var answer = await _chatService.AskQuestionAsync(query, membership.OrganizationId, history, HttpContext.RequestAborted);
+
         var fullResponse = new System.Text.StringBuilder();
-        await foreach (var token in _chatService.AskQuestionAsync(query, membership.OrganizationId))
+        await foreach (var token in answer.Tokens)
         {
             fullResponse.Append(token);
             yield return token;
@@ -91,7 +119,8 @@ public class AIController : ControllerBase
             ChatSessionId = sessionId,
             Role = "assistant",
             Content = fullResponse.ToString(),
-            UserEmail = user.Email
+            UserEmail = user.Email,
+            Sources = answer.Sources.Count > 0 ? JsonSerializer.Serialize(answer.Sources, JsonOptions) : null
         };
         _context.ChatMessages.Add(assistantMessage);
         await _context.SaveChangesAsync();
@@ -129,10 +158,19 @@ public class AIController : ControllerBase
              m.Content,
              m.Role,
              m.Timestamp,
-             m.ChatSessionId
+             m.ChatSessionId,
+             m.Sources
          })
          .ToListAsync();
 
-        return Ok(messages);
+        return Ok(messages.Select(m => new
+        {
+            m.Id,
+            m.Content,
+            m.Role,
+            m.Timestamp,
+            m.ChatSessionId,
+            Sources = ParseSources(m.Sources)
+        }));
     }
 }

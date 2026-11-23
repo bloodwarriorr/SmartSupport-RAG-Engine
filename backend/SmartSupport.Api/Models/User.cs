@@ -51,5 +51,8 @@ namespace SmartSupport.Api.Models
 
         
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        /// <summary>Assistant messages only: JSON list of the documents the answer was based on.</summary>
+        public string? Sources { get; set; }
     }
 }

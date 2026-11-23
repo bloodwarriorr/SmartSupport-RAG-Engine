@@ -85,7 +85,7 @@
     </div>
   </div>
 
-  <div class="chat-history" #scrollContainer>
+  <div class="chat-history" #scrollContainer (scroll)="onHistoryScroll()">
   @if (!chatService.history().length && !chatService.isLoading() && !chatService.currentResponse()) {
     <div class="empty-chat">
       <div class="empty-mark">S</div>
@@ -110,7 +110,35 @@
     <div class="message" [ngClass]="msg.role === 'user' ? 'user' : 'ai'">
       @if (msg.role === 'user') { <div class="avatar user-avatar">ME</div> }
       @if (msg.role !== 'user') { <div class="avatar">AI</div> }
-      <div class="bubble">{{ msg.content }}</div>
+      @if (msg.role === 'user') {
+        <div class="bubble">{{ msg.content }}</div>
+      } @else {
+        <div class="ai-body">
+          <div class="bubble">{{ msg.content }}</div>
+          @if (msg.sources?.length) {
+            <div class="sources">
+              <span class="sources-label">Sources</span>
+              @for (src of msg.sources; track src.fileName; let i = $index) {
+                <button type="button" class="source-chip"
+                        [class.open]="isSourceOpen(msg.id, i)"
+                        (click)="toggleSource(msg.id, i)"
+                        [title]="'Show the passage from ' + src.fileName">
+                  <span>📄</span>
+                  <span class="source-name" dir="auto">{{ src.fileName }}</span>
+                </button>
+              }
+            </div>
+            @for (src of msg.sources; track src.fileName; let i = $index) {
+              @if (isSourceOpen(msg.id, i)) {
+                <blockquote class="source-snippet" dir="auto">
+                  <div class="snippet-file">{{ src.fileName }}</div>
+                  {{ src.snippet }}
+                </blockquote>
+              }
+            }
+          }
+        </div>
+      }
     </div>
   }
 

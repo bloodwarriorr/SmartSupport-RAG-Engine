@@ -649,3 +649,76 @@ $sidebar-width: 270px;
     font-size: 0.78rem;
   }
 }
+
+/* ---------- Answer sources ---------- */
+.ai-body {
+  flex: 1;
+  min-width: 0;
+
+  .bubble { display: block; }
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+
+  .sources-label {
+    margin-right: 2px;
+    color: #8e8ea0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 5px 10px;
+  border: 1px solid #3d3d3d;
+  border-radius: 999px;
+  background: #262626;
+  color: #c5c5d2;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  .source-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:hover { background: #2f2f2f; color: #fff; }
+  &.open {
+    border-color: rgba(16, 163, 127, 0.6);
+    background: rgba(16, 163, 127, 0.12);
+    color: #3ccfa5;
+  }
+}
+
+.source-snippet {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid #10a37f;
+  border-radius: 0 8px 8px 0;
+  background: #1b1b1b;
+  color: #b4b4c0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: normal;
+
+  .snippet-file {
+    margin-bottom: 4px;
+    color: #8e8ea0;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+}

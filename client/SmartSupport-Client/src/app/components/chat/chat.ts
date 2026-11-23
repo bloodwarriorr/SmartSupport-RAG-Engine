@@ -109,12 +109,22 @@ export class Chat implements OnInit, AfterViewChecked {
   }
 
 
+  // Follow new content only while the user is at the bottom, so reading older messages isn't interrupted.
+  private stickToBottom = true;
+
   ngAfterViewChecked() {
-    this.scrollToBottom();
+    if (this.stickToBottom) this.scrollToBottom();
+  }
+
+  onHistoryScroll() {
+    const el = this.scrollContainer?.nativeElement as HTMLElement | undefined;
+    if (!el) return;
+    this.stickToBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
 
   send() {
     if (this.userQuery.trim() && !this.chatService.isLoading()) {
+      this.stickToBottom = true;
       this.lastUserQuery = this.userQuery;
       this.chatService.askQuestionStream(this.userQuery);
       this.userQuery = ''; 
@@ -216,12 +226,26 @@ export class Chat implements OnInit, AfterViewChecked {
   selectSession(sessionId: string) {
     if (this.chatService.isLoading()) return;
     if (sessionId !== this.chatService.currentSessionId()) {
+      this.stickToBottom = true;
       this.lastUserQuery = '';
       this.chatService.currentResponse.set('');
       this.chatService.history.set([]);
       this.chatService.loadHistory(sessionId);
     }
     this.closeSidebarOnMobile();
+  }
+
+  // Which source passages are expanded, as "messageId:index".
+  private openSources = new Set<string>();
+
+  isSourceOpen(messageId: number, index: number): boolean {
+    return this.openSources.has(`${messageId}:${index}`);
+  }
+
+  toggleSource(messageId: number, index: number) {
+    const key = `${messageId}:${index}`;
+    if (this.openSources.has(key)) this.openSources.delete(key);
+    else this.openSources.add(key);
   }
 
   toggleSidebar() {
