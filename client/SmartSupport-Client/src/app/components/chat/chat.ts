@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked, computed } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../services/chat';
@@ -28,7 +28,7 @@ function escapeHtml(value: string): string {
   templateUrl: './chat.html',
   styleUrl: './chat.scss'
 })
-export class Chat implements OnInit, AfterViewChecked {
+export class Chat implements OnInit, AfterViewInit, OnDestroy {
   chatService = inject(ChatService);
   router = inject(Router); 
   private toastr = inject(ToastrService);
@@ -112,9 +112,25 @@ export class Chat implements OnInit, AfterViewChecked {
 
   // Follow new content only while the user is at the bottom, so reading older messages isn't interrupted.
   private stickToBottom = true;
+  private contentObserver?: MutationObserver;
+  private scrollFrame = 0;
 
-  ngAfterViewChecked() {
-    if (this.stickToBottom) this.scrollToBottom();
+  ngAfterViewInit() {
+    // Follow the conversation only when its content changes (new message, streamed text, expanded source).
+    // Never in response to the user's own scrolling, which would make it impossible to scroll up.
+    this.contentObserver = new MutationObserver(() => {
+      if (!this.stickToBottom || this.scrollFrame) return;
+      this.scrollFrame = requestAnimationFrame(() => {
+        this.scrollFrame = 0;
+        this.scrollToBottom();
+      });
+    });
+    this.contentObserver.observe(this.scrollContainer.nativeElement, { childList: true, subtree: true, characterData: true });
+  }
+
+  ngOnDestroy() {
+    this.contentObserver?.disconnect();
+    cancelAnimationFrame(this.scrollFrame);
   }
 
   onHistoryScroll() {
