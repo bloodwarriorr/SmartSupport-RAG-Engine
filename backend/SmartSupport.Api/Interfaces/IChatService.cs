@@ -2,6 +2,7 @@
 {
     public interface IChatService
     {
-        IAsyncEnumerable<string> AskQuestionAsync(string query);
+        /// <summary>Answers a question using only the given organization's documents.</summary>
+        IAsyncEnumerable<string> AskQuestionAsync(string query, Guid organizationId);
     }
 }

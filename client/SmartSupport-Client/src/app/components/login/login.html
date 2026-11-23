@@ -32,6 +32,12 @@
     </section>
 
     <section class="auth-card" aria-label="Sign in">
+      @if (pendingInvite) {
+        <div class="invite-banner">
+          <span>✉️</span>
+          <span>You've been invited to join an organization. Sign in with Google to accept.</span>
+        </div>
+      }
       <div class="tabs" role="tablist">
         <button type="button" role="tab" [class.active]="mode === 'signin'" [attr.aria-selected]="mode === 'signin'" (click)="setMode('signin')">Sign in</button>
         <button type="button" role="tab" [class.active]="mode === 'signup'" [attr.aria-selected]="mode === 'signup'" (click)="setMode('signup')">Create account</button>

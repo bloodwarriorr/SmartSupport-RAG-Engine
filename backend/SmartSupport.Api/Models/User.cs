@@ -29,6 +29,9 @@ namespace SmartSupport.Api.Models
         public int UserId { get; set; } 
         public User User { get; set; }
 
+        // Null only for chats created before organizations existed.
+        public Guid? OrganizationId { get; set; }
+
         public string Title { get; set; } = "New Chat";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public List<ChatMessage> Messages { get; set; } = new();

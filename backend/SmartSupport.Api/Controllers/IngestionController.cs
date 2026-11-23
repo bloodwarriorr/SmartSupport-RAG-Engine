@@ -13,17 +13,32 @@ namespace SmartSupport.Api.Controllers;
 [Experimental("SKEXP0050")]
 public class IngestionController : ControllerBase
 {
-    private readonly IIngestionService _ingestionService;
+    private const long MaxUploadBytes = 10 * 1024 * 1024; // 10 MB
 
-    public IngestionController(IIngestionService ingestionService)
+    private readonly IIngestionService _ingestionService;
+    private readonly OrgAccessService _orgAccess;
+
+    public IngestionController(IIngestionService ingestionService, OrgAccessService orgAccess)
     {
         _ingestionService = ingestionService;
+        _orgAccess = orgAccess;
     }
 
-    [HttpPost("upload")] 
+    [HttpPost("upload")]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {
-        
+        // Only organization admins can add documents.
+        var membership = await _orgAccess.GetMembershipAsync(User);
+        if (membership == null)
+            return StatusCode(StatusCodes.Status403Forbidden, "Join or create an organization first.");
+        if (membership.Role != Models.OrgRole.Admin)
+            return StatusCode(StatusCodes.Status403Forbidden, "Only organization admins can upload documents.");
+
+        if (file != null && file.Length > MaxUploadBytes)
+        {
+            return BadRequest("File is too large. The limit is 10 MB.");
+        }
+
         if (file == null || file.Length == 0)
         {
             return BadRequest("No file uploaded.");
@@ -63,7 +78,7 @@ public class IngestionController : ControllerBase
             }
 
             
-            await _ingestionService.ProcessDocumentAsync(file.FileName, fileContent);
+            await _ingestionService.ProcessDocumentAsync(file.FileName, fileContent, membership.OrganizationId);
 
             return Ok(new { message = "Processed successfully" });
         }

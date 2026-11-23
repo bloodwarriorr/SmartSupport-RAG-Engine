@@ -64,6 +64,9 @@ namespace SmartSupport.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -72,6 +75,8 @@ namespace SmartSupport.Api.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
 
                     b.HasIndex("UserId");
 
@@ -119,9 +124,67 @@ namespace SmartSupport.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("OrganizationId");
+
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("SmartSupport.Api.Models.Membership", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("UserId", "OrganizationId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Memberships");
+                });
+
+            modelBuilder.Entity("SmartSupport.Api.Models.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InviteCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InviteCode")
+                        .IsUnique();
+
+                    b.ToTable("Organizations");
                 });
 
             modelBuilder.Entity("SmartSupport.Api.Models.User", b =>
@@ -162,6 +225,10 @@ namespace SmartSupport.Api.Migrations
 
             modelBuilder.Entity("SmartSupport.Api.Models.ChatSession", b =>
                 {
+                    b.HasOne("SmartSupport.Api.Models.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("SmartSupport.Api.Models.User", "User")
                         .WithMany("ChatSessions")
                         .HasForeignKey("UserId")
@@ -182,6 +249,34 @@ namespace SmartSupport.Api.Migrations
                     b.Navigation("KnowledgeDocument");
                 });
 
+            modelBuilder.Entity("SmartSupport.Api.Models.KnowledgeDocument", b =>
+                {
+                    b.HasOne("SmartSupport.Api.Models.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("SmartSupport.Api.Models.Membership", b =>
+                {
+                    b.HasOne("SmartSupport.Api.Models.Organization", "Organization")
+                        .WithMany("Memberships")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSupport.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SmartSupport.Api.Models.ChatSession", b =>
                 {
                     b.Navigation("Messages");
@@ -190,6 +285,11 @@ namespace SmartSupport.Api.Migrations
             modelBuilder.Entity("SmartSupport.Api.Models.KnowledgeDocument", b =>
                 {
                     b.Navigation("Chunks");
+                });
+
+            modelBuilder.Entity("SmartSupport.Api.Models.Organization", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 
             modelBuilder.Entity("SmartSupport.Api.Models.User", b =>

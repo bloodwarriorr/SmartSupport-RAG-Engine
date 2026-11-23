@@ -25,17 +25,18 @@ public class IngestionService : IIngestionService
     }
 
     [Experimental("SKEXP0050")]
-    public async Task ProcessDocumentAsync(string fileName, string rawText)
+    public async Task ProcessDocumentAsync(string fileName, string rawText, Guid organizationId)
     {
         try
         {
-            
-            await EnsureCollectionExistsAsync();
+            await QdrantCollections.EnsureKnowledgeBaseAsync(_qdrantClient);
 
             var document = new KnowledgeDocument
             {
                 Id = Guid.NewGuid(),
                 FileName = fileName,
+                ContentType = Path.GetExtension(fileName).TrimStart('.').ToLowerInvariant(),
+                OrganizationId = organizationId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -44,37 +45,38 @@ public class IngestionService : IIngestionService
             var paragraphs = TextChunker.SplitPlainTextParagraphs(lines, 1000);
 #pragma warning restore SKEXP0050
 
-            foreach (var paragraph in paragraphs)
+            if (paragraphs.Count == 0)
+                throw new InvalidOperationException("The document has no readable text.");
+
+            // Embed all chunks in batched calls instead of one request per chunk.
+            var embeddings = await _embeddingService.GenerateEmbeddingsAsync(paragraphs);
+
+            var points = new List<PointStruct>(paragraphs.Count);
+            for (var i = 0; i < paragraphs.Count; i++)
             {
-                
-                var embeddings = await _embeddingService.GenerateEmbeddingsAsync(new List<string> { paragraph });
-                var vector = embeddings[0].ToArray();
-
                 var chunkId = Guid.NewGuid();
-
-                
-                await _qdrantClient.UpsertAsync(QdrantCollections.KnowledgeBase, new[]
+                points.Add(new PointStruct
                 {
-                    new PointStruct
+                    Id = chunkId,
+                    Vectors = embeddings[i].ToArray(),
+                    Payload =
                     {
-                        Id = chunkId,
-                        Vectors = vector,
-                        Payload =
-                        {
-                            ["file_name"] = fileName,
-                            ["content"] = paragraph
-                        }
+                        [QdrantCollections.OrgIdField] = organizationId.ToString(),
+                        ["document_id"] = document.Id.ToString(),
+                        ["file_name"] = fileName,
+                        ["content"] = paragraphs[i]
                     }
                 });
 
-                
                 document.Chunks.Add(new DocumentChunk
                 {
                     Id = chunkId,
-                    TextContent = paragraph,
+                    TextContent = paragraphs[i],
                     VectorId = chunkId.ToString()
                 });
             }
+
+            await _qdrantClient.UpsertAsync(QdrantCollections.KnowledgeBase, points);
 
             _dbContext.Documents.Add(document);
             await _dbContext.SaveChangesAsync();
@@ -82,31 +84,6 @@ public class IngestionService : IIngestionService
         catch (Exception ex)
         {
             throw new Exception($"Error during ingestion: {ex.Message}", ex);
-        }
-    }
-    private async Task EnsureCollectionExistsAsync()
-    {
-        try
-        {
-           
-            var response = await _qdrantClient.ListCollectionsAsync();
-           
-        if (!response.Contains(QdrantCollections.KnowledgeBase))
-        {
-            await _qdrantClient.CreateCollectionAsync(QdrantCollections.KnowledgeBase,
-                new VectorParams
-                {
-                    Size = GeminiEmbeddingService.Dimensions,
-                    Distance = Distance.Cosine
-                });
-        }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Qdrant Connection Error: {ex.Message}");
-            if (ex.InnerException != null)
-                Console.WriteLine($"Inner: {ex.InnerException.Message}");
-            throw;
         }
     }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SocialAuthService, GoogleSigninButtonModule, SocialUser } from '@abacritt/angularx-social-login';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { OrgService } from '../../services/org';
 
 @Component({
   selector: 'app-login',
@@ -16,7 +17,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private sub?: Subscription;
 
-  mode: 'signin' | 'signup' = 'signin';
+  // Set when the user opened an invite link before signing in.
+  pendingInvite = OrgService.getPendingInvite();
+  mode: 'signin' | 'signup' = this.pendingInvite ? 'signup' : 'signin';
   year = new Date().getFullYear();
 
   features = [
@@ -30,7 +33,9 @@ export class LoginComponent implements OnInit, OnDestroy {
       if (user?.idToken) {
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('idToken', user.idToken);
-        this.router.navigate(['/chat']);
+        const invite = OrgService.getPendingInvite();
+        // Finish an invite link first; otherwise the chat guard sends users without an org to onboarding.
+        this.router.navigate(invite ? ['/join', invite] : ['/chat']);
       }
     });
   }

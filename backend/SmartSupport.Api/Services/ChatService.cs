@@ -13,17 +13,14 @@ namespace SmartSupport.Api.Services
             _chatCompletionService = chatCompletionService;
         }
 
-        public async IAsyncEnumerable<string> AskQuestionAsync(string query)
+        public async IAsyncEnumerable<string> AskQuestionAsync(string query, Guid organizationId)
         {
-            
-            var searchResults = await _searchService.SearchRelevantContentAsync(query);
+            var searchResults = await _searchService.SearchRelevantContentAsync(query, organizationId);
             var contextText = string.Join("\n", searchResults.Select(r => r.Content));
 
             var chatHistory = new ChatHistory("You are a helpful assistant. Use the provided context to answer questions.");
 
             chatHistory.AddUserMessage($"Context:\n{contextText}\n\nQuestion: {query}");
-
-            var prompt = $"Use this context: {contextText}\n\nQuestion: {query}\n\nAnswer:";
 
             var results = _chatCompletionService.GetStreamingChatMessageContentsAsync(chatHistory);
 

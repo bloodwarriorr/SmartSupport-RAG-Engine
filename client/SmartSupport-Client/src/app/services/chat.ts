@@ -86,7 +86,11 @@ async askQuestionStream(query: string) {
       headers: { 'Authorization': `Bearer ${this.idToken}` }
     });
 
-    if (!response.body) throw new Error('No response body');
+    if (response.status === 403) {
+      this.currentResponse.set('You need to belong to an organization to chat. Please reload the page.');
+      return;
+    }
+    if (!response.ok || !response.body) throw new Error(`Request failed (${response.status})`);
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -139,12 +143,12 @@ async askQuestionStream(query: string) {
 }
 
   
-  async uploadFile(file: File) {
+  /** Uploads a document to the organization's knowledge base (admins only). */
+  async uploadFile(file: File): Promise<{ ok: boolean; message?: string }> {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-
       const response = await fetch(`${environment.API_URL}/api/Ingestion/upload`, {
         method: 'POST',
         headers: {
@@ -152,10 +156,14 @@ async askQuestionStream(query: string) {
         },
         body: formData
       });
-      return response.ok;
+      if (response.ok) return { ok: true };
+
+      // The API returns plain-text error messages (e.g. "Only organization admins can upload documents.").
+      const text = await response.text().catch(() => '');
+      return { ok: false, message: text.length < 300 ? text : undefined };
     } catch (error) {
       console.error('Upload error:', error);
-      return false;
+      return { ok: false };
     }
   }
 

@@ -2,6 +2,7 @@
 {
     public interface IIngestionService
     {
-        Task ProcessDocumentAsync(string fileName, string rawText);
+        /// <summary>Splits, embeds and stores a document for the given organization.</summary>
+        Task ProcessDocumentAsync(string fileName, string rawText, Guid organizationId);
     }
 }

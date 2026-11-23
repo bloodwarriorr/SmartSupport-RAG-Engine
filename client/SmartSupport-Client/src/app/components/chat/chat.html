@@ -39,12 +39,24 @@
           <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
-      <h2>Smart Support AI</h2>
+      <h2 dir="auto" [title]="org()?.name || ''">{{ org()?.name || 'Smart Support AI' }}</h2>
+      @if (org()) {
+        <span class="role-badge" [class.admin]="isAdmin()">{{ org()!.role }}</span>
+      }
       <span class="status-dot" [class.online]="!chatService.isLoading()"></span>
     </div>
 
-    <!-- Left to right: Log out button, name, avatar -->
+    <!-- Left to right: Invite (admins), Log out button, name, avatar -->
     <div class="header-user">
+      @if (isAdmin()) {
+        <button type="button" class="logout-btn invite-btn" (click)="openInvite()" title="Invite people">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"/>
+          </svg>
+          <span>Invite</span>
+        </button>
+      }
       <button type="button" class="logout-btn" (click)="logout()" title="Log out">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -69,8 +81,21 @@
   @if (!chatService.history().length && !chatService.isLoading() && !chatService.currentResponse()) {
     <div class="empty-chat">
       <div class="empty-mark">S</div>
-      <h3>How can I help you today?</h3>
-      <p>Ask anything about your uploaded documents.</p>
+      @if (hasDocuments()) {
+        <h3>How can I help you today?</h3>
+        <p>Ask anything about {{ org()?.name }}'s documents
+          ({{ org()?.documentCount }} {{ org()?.documentCount === 1 ? 'document' : 'documents' }}).</p>
+      } @else if (isAdmin()) {
+        <h3>Upload your first document</h3>
+        <p>SmartSupport answers only from your organization's documents.<br>Add a PDF, TXT or Markdown file to get started.</p>
+        <label for="file-upload" class="empty-upload-btn" [class.disabled]="isUploading">
+          {{ isUploading ? 'Uploading…' : '📎 Upload a document' }}
+        </label>
+        <p class="empty-hint">Then use <b>Invite</b> at the top to add your team.</p>
+      } @else {
+        <h3>No documents yet</h3>
+        <p>Your organization's admin hasn't added any documents yet.<br>Once they do, you can ask questions about them here.</p>
+      }
     </div>
   }
   @for (msg of chatService.history(); track msg.id) {
@@ -109,18 +134,18 @@
 
   <div class="input-area">
     <div class="input-container">
-      @if (isAdmin) {
-        <label for="file-upload" class="attach-btn" title="Upload context file">
+      @if (isAdmin()) {
+        <label for="file-upload" class="attach-btn" title="Upload a document (PDF, TXT, MD)">
           <span class="attach-icon">📎</span>
-          <input type="file" id="file-upload" (change)="onFileSelected($event)" hidden>
+          <input type="file" id="file-upload" accept=".pdf,.txt,.md" (change)="onFileSelected($event)" [disabled]="isUploading" hidden>
         </label>
       }
-      <input 
-        [(ngModel)]="userQuery" 
-        (keyup.enter)="send()" 
-        placeholder="Message SmartSupport..."
-        [disabled]="chatService.isLoading()"
-        [style.padding-left]="isAdmin ? '45px' : '20px'" 
+      <input
+        [(ngModel)]="userQuery"
+        (keyup.enter)="send()"
+        [placeholder]="hasDocuments() ? 'Message SmartSupport...' : (isAdmin() ? 'Upload a document first…' : 'Waiting for your admin to add documents…')"
+        [disabled]="chatService.isLoading() || !hasDocuments()"
+        [style.padding-left]="isAdmin() ? '45px' : '20px'"
       >
       <button (click)="send()" [disabled]="chatService.isLoading() || !userQuery.trim()">
         <span class="send-icon">➤</span>

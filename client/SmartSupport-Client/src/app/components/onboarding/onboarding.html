@@ -1,0 +1,50 @@
+<div class="onboarding">
+  <div class="glow"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <span>SmartSupport</span>
+    </div>
+    <button type="button" class="link-btn" (click)="logout()">Log out</button>
+  </header>
+
+  <main class="content">
+    <div class="intro">
+      <h1>
+        @if (user?.name) { Hi {{ user!.name.split(' ')[0] }}, } let's set up your workspace
+      </h1>
+      <p>SmartSupport answers questions from your organization's documents. Create a new organization, or join your team's.</p>
+    </div>
+
+    <div class="cards">
+      <form class="card" (ngSubmit)="create()">
+        <div class="card-icon">🏢</div>
+        <h2>Create an organization</h2>
+        <p class="card-text">You'll be the <strong>admin</strong>: you upload documents and invite your team.</p>
+
+        <label for="org-name">Organization name</label>
+        <input id="org-name" name="orgName" [(ngModel)]="orgName" placeholder="e.g. Acme Support" maxlength="100" autocomplete="organization">
+
+        <button type="submit" class="primary" [disabled]="orgName.trim().length < 2 || busy()">
+          {{ busy() === 'create' ? 'Creating…' : 'Create organization' }}
+        </button>
+      </form>
+
+      <div class="or"><span>or</span></div>
+
+      <form class="card" (ngSubmit)="join()">
+        <div class="card-icon">🔑</div>
+        <h2>Join with an invite code</h2>
+        <p class="card-text">Got a code or link from your admin? You'll join as a <strong>member</strong> and can start asking right away.</p>
+
+        <label for="invite-code">Invite code</label>
+        <input id="invite-code" name="inviteCode" [(ngModel)]="inviteCode" placeholder="e.g. K7P2-XQ9M" autocomplete="off" autocapitalize="characters" class="code-input">
+
+        <button type="submit" class="secondary" [disabled]="!inviteCode.trim() || busy()">
+          {{ busy() === 'join' ? 'Joining…' : 'Join organization' }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
