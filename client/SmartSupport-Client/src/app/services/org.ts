@@ -97,7 +97,7 @@ export class OrgService {
   }
 }
 
-/** Reads the server's { message } error text, falling back to a generic message. */
+/** Reads the API's error text (problem details "message"/"detail"), falling back to a generic message. */
 export function apiErrorMessage(err: any, fallback = 'Something went wrong. Please try again.'): string {
-  return err?.error?.message || (typeof err?.error === 'string' ? err.error : '') || fallback;
+  return err?.error?.message || err?.error?.detail || (typeof err?.error === 'string' ? err.error : '') || fallback;
 }

@@ -120,18 +120,20 @@ async askQuestionStream(query: string) {
   this.isLoading.set(true);
 
   try {
-    const url = `${this.apiUrl}/ask-stream?query=${encodeURIComponent(query)}&sessionId=${sessionId}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${this.idToken}` }
+    // POST keeps the question out of URLs (and so out of server and proxy logs).
+    const response = await fetch(`${this.apiUrl}/ask`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${this.idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, sessionId })
     });
 
-    if (response.status === 403) {
-      this.currentResponse.set('You need to belong to an organization to chat. Please reload the page.');
+    if (!response.ok) {
+      // The API explains expected problems (no organization, too many questions, too long...) in "message".
+      const problem = await response.json().catch(() => null);
+      this.currentResponse.set(problem?.message || `Something went wrong (${response.status}). Please try again.`);
       return;
     }
-    if (!response.ok || !response.body) throw new Error(`Request failed (${response.status})`);
+    if (!response.body) throw new Error('No response body');
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -190,7 +192,7 @@ async askQuestionStream(query: string) {
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${environment.API_URL}/api/Ingestion/upload`, {
+      const response = await fetch(`${environment.API_URL}/api/documents`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.idToken}`
@@ -199,9 +201,9 @@ async askQuestionStream(query: string) {
       });
       if (response.ok) return { ok: true };
 
-      // The API returns plain-text error messages (e.g. "Only organization admins can upload documents.").
-      const text = await response.text().catch(() => '');
-      return { ok: false, message: text.length < 300 ? text : undefined };
+      // The API returns problem details with a user-friendly "message" (e.g. "Only organization admins can upload documents.").
+      const problem = await response.json().catch(() => null);
+      return { ok: false, message: problem?.message };
     } catch (error) {
       console.error('Upload error:', error);
       return { ok: false };

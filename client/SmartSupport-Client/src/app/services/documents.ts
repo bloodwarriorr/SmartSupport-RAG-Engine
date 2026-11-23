@@ -31,7 +31,7 @@ export class DocumentsService {
   upload(file: File): Observable<HttpEvent<unknown>> {
     const form = new FormData();
     form.append('file', file);
-    return this.http.post(`${environment.API_URL}/api/Ingestion/upload`, form, {
+    return this.http.post(`${environment.API_URL}/api/documents`, form, {
       reportProgress: true,
       observe: 'events'
     });

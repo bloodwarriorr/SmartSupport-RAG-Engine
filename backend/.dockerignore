@@ -1,0 +1,15 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# Local-only settings and secrets: never bake them into the image.
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+**/*.user
+
+# Editor / tool folders
+**/.vs/
+**/.vscode/
+**/.idea/
+**/.claude/

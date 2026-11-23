@@ -1,89 +1,49 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Qdrant.Client;
-using SmartSupport.Api.Data;
-using SmartSupport.Api.Models;
-using SmartSupport.Api.Services;
+using Microsoft.AspNetCore.RateLimiting;
+using SmartSupport.Api.Extensions;
+using SmartSupport.Application.Abstractions.Persistence;
+using SmartSupport.Application.Common.Exceptions;
+using SmartSupport.Application.Documents;
 
 namespace SmartSupport.Api.Controllers;
 
-/// <summary>
-/// The organization's knowledge base. Everyone in the org can list documents; only admins can delete.
-/// (Uploads go through IngestionController.)
-/// </summary>
+/// <summary>The organization's knowledge base. Everyone can list; only admins can upload or delete.</summary>
 [Authorize]
 [ApiController]
 [Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly OrgAccessService _orgAccess;
-    private readonly QdrantClient _qdrant;
-    private readonly ILogger<DocumentsController> _logger;
+    private readonly IDocumentService _documents;
 
-    public DocumentsController(AppDbContext db, OrgAccessService orgAccess, QdrantClient qdrant, ILogger<DocumentsController> logger)
+    public DocumentsController(IDocumentService documents)
     {
-        _db = db;
-        _orgAccess = orgAccess;
-        _qdrant = qdrant;
-        _logger = logger;
+        _documents = documents;
     }
 
     [HttpGet]
-    public async Task<IActionResult> List()
+    public Task<IReadOnlyList<DocumentSummary>> List(CancellationToken cancellationToken) =>
+        _documents.ListAsync(cancellationToken);
+
+    /// <summary>Uploads a PDF, TXT or Markdown file (max 10 MB) and makes it searchable.</summary>
+    [HttpPost]
+    [HttpPost("/api/Ingestion/upload")] // Old route, kept so already-deployed clients keep working.
+    [EnableRateLimiting(ApiServiceExtensions.UploadPolicy)]
+    [RequestSizeLimit(DocumentRules.MaxUploadBytes + 64 * 1024)]
+    public async Task<ActionResult<DocumentSummary>> Upload(IFormFile? file, CancellationToken cancellationToken)
     {
-        var membership = await _orgAccess.GetMembershipAsync(User);
-        if (membership == null) return StatusCode(StatusCodes.Status403Forbidden);
+        if (file == null)
+            throw new ValidationException("No file uploaded.");
 
-        var documents = await _db.Documents
-            .AsNoTracking()
-            .Where(d => d.OrganizationId == membership.OrganizationId)
-            .OrderByDescending(d => d.CreatedAt)
-            .Select(d => new
-            {
-                d.Id,
-                d.FileName,
-                d.ContentType,
-                d.CreatedAt,
-                ChunkCount = d.Chunks.Count
-            })
-            .ToListAsync();
-
-        return Ok(documents);
+        await using var stream = file.OpenReadStream();
+        var document = await _documents.UploadAsync(new UploadDocumentCommand(file.FileName, file.Length, stream), cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, document);
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        var membership = await _orgAccess.GetMembershipAsync(User);
-        if (membership == null || membership.Role != OrgRole.Admin)
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Only organization admins can delete documents." });
-
-        var document = await _db.Documents
-            .Include(d => d.Chunks)
-            .FirstOrDefaultAsync(d => d.Id == id && d.OrganizationId == membership.OrganizationId);
-        if (document == null) return NotFound(new { message = "Document not found." });
-
-        // Remove the vectors first, so a deleted document can never show up in answers again.
-        var pointIds = document.Chunks
-            .Select(c => Guid.TryParse(c.VectorId, out var g) ? g : c.Id)
-            .ToList();
-        if (pointIds.Count > 0)
-        {
-            try
-            {
-                await _qdrant.DeleteAsync(QdrantCollections.KnowledgeBase, pointIds);
-            }
-            catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
-            {
-                _logger.LogWarning("Qdrant collection missing while deleting document {Id}; continuing.", id);
-            }
-        }
-
-        _db.Documents.Remove(document); // chunks are deleted by cascade
-        await _db.SaveChangesAsync();
-
+        await _documents.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

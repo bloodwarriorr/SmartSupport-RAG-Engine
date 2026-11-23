@@ -1,6 +1,21 @@
-@SmartSupport.Api_HostAddress = http://localhost:5105
+@host = http://localhost:5105
+# Paste a Google ID token (from the browser's localStorage "idToken") to try authenticated calls.
+@token = paste-token-here
 
-GET {{SmartSupport.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Liveness (no auth)
+GET {{host}}/health
 
-###
+### Who am I / my organization
+GET {{host}}/api/orgs/me
+Authorization: Bearer {{token}}
+
+### My chats
+GET {{host}}/api/ai/sessions
+Authorization: Bearer {{token}}
+
+### Ask a question (streams a JSON array of text pieces)
+POST {{host}}/api/ai/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "query": "What are the support hours?", "sessionId": "00000000-0000-0000-0000-000000000001" }
