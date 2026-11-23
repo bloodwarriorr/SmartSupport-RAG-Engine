@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../services/chat';
@@ -28,6 +28,32 @@ export class Chat implements OnInit, AfterViewChecked {
   lastUserQuery: string = '';
   userQuery: string = '';
   isAdmin: boolean = true;
+
+  // Sidebar starts open on desktop and closed on phones.
+  sidebarOpen = typeof window !== 'undefined' ? window.innerWidth > 900 : true;
+
+  /** Sessions grouped into Today / Yesterday / Previous 7 days / Previous 30 days / Older. */
+  groupedSessions = computed(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const day = 24 * 60 * 60 * 1000;
+    const buckets = [
+      { label: 'Today', from: startOfToday.getTime() },
+      { label: 'Yesterday', from: startOfToday.getTime() - day },
+      { label: 'Previous 7 days', from: startOfToday.getTime() - 7 * day },
+      { label: 'Previous 30 days', from: startOfToday.getTime() - 30 * day },
+      { label: 'Older', from: -Infinity }
+    ];
+    const groups = buckets.map(b => ({ label: b.label, sessions: [] as any[] }));
+
+    for (const s of this.chatService.sessions()) {
+      const time = this.parseServerDate(s.createdAt);
+      const index = buckets.findIndex(b => time >= b.from);
+      groups[index].sessions.push(s);
+    }
+    return groups.filter(g => g.sessions.length > 0);
+  });
+
   ngOnInit() {
 
     const savedToken = localStorage.getItem('idToken');
@@ -108,6 +134,33 @@ export class Chat implements OnInit, AfterViewChecked {
   startNewChat() {
     this.lastUserQuery = '';
     this.chatService.createNewSession();
+    this.closeSidebarOnMobile();
+  }
+
+  selectSession(sessionId: string) {
+    if (this.chatService.isLoading()) return;
+    if (sessionId !== this.chatService.currentSessionId()) {
+      this.lastUserQuery = '';
+      this.chatService.currentResponse.set('');
+      this.chatService.history.set([]);
+      this.chatService.loadHistory(sessionId);
+    }
+    this.closeSidebarOnMobile();
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  private closeSidebarOnMobile() {
+    if (window.innerWidth <= 900) this.sidebarOpen = false;
+  }
+
+  /** The API returns UTC dates, sometimes without a "Z"; treat those as UTC too. */
+  private parseServerDate(value: string): number {
+    if (!value) return 0;
+    const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
+    return new Date(hasZone ? value : value + 'Z').getTime();
   }
 
   private scrollToBottom(): void {
