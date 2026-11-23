@@ -19,7 +19,8 @@ namespace SmartSupport.Api.Services
             Answer ONLY using the information in the provided context, which comes from the organization's documents.
             If the context does not contain the answer, say that you couldn't find it in the documents. Do not guess or use outside knowledge.
             Use the earlier conversation to understand follow-up questions.
-            Answer in the same language as the user's question. Be clear and concise.
+            Always reply in the language of the user's LATEST question, even if the context or earlier replies are in another language.
+            Be clear and concise.
             """;
 
         private readonly ISearchService _searchService;
@@ -52,7 +53,12 @@ namespace SmartSupport.Api.Services
                 if (turn.Role == "user") chatHistory.AddUserMessage(turn.Content);
                 else chatHistory.AddAssistantMessage(turn.Content);
             }
-            chatHistory.AddUserMessage($"Context:\n{contextText}\n\nQuestion: {query}");
+            // The language rule sits right next to the question: models follow the nearest instruction,
+            // and otherwise drift toward the language of the documents or of earlier (possibly wrong) replies.
+            chatHistory.AddUserMessage(
+                $"Context:\n{contextText}\n\n" +
+                $"Question: {query}\n\n" +
+                "Reply in the same language as the question above (not the language of the context or of earlier replies).");
 
             return new ChatAnswer(PickSources(results), StreamAsync(chatHistory, cancellationToken));
         }
