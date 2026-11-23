@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked, com
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService } from '../../services/chat';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import Swal from 'sweetalert2';
 import { getSessionUser } from '../../services/auth-session';
@@ -23,7 +23,7 @@ function escapeHtml(value: string): string {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, RouterLink],
   templateUrl: './chat.html',
   styleUrl: './chat.scss'
 })

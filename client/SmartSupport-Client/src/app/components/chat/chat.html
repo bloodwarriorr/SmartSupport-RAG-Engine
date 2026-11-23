@@ -27,6 +27,14 @@
         <p class="no-sessions">No conversations yet.<br>Ask your first question to start one.</p>
       }
     </nav>
+
+    <div class="sidebar-bottom">
+      <a routerLink="/documents" class="docs-link">
+        <span class="docs-link-icon">📚</span>
+        <span class="docs-link-text">{{ isAdmin() ? 'Manage documents' : 'Documents' }}</span>
+        <span class="docs-link-count">{{ org()?.documentCount ?? 0 }}</span>
+      </a>
+    </div>
   </aside>
 
   <div class="sidebar-backdrop" (click)="sidebarOpen = false"></div>
@@ -91,7 +99,7 @@
         <label for="file-upload" class="empty-upload-btn" [class.disabled]="isUploading">
           {{ isUploading ? 'Uploading…' : '📎 Upload a document' }}
         </label>
-        <p class="empty-hint">Then use <b>Invite</b> at the top to add your team.</p>
+        <p class="empty-hint">Or open <a routerLink="/documents">Manage documents</a> to add several at once. Then use <b>Invite</b> at the top to add your team.</p>
       } @else {
         <h3>No documents yet</h3>
         <p>Your organization's admin hasn't added any documents yet.<br>Once they do, you can ask questions about them here.</p>

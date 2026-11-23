@@ -57,6 +57,7 @@ public class IngestionController : ControllerBase
             switch (extension)
             {
                 case ".txt":
+                case ".md":
                     using (var reader = new StreamReader(file.OpenReadStream()))
                     {
                         fileContent = await reader.ReadToEndAsync();
@@ -66,10 +67,12 @@ public class IngestionController : ControllerBase
                 case ".pdf":
                     using (var document = UglyToad.PdfPig.PdfDocument.Open(file.OpenReadStream()))
                     {
+                        var text = new System.Text.StringBuilder();
                         foreach (var page in document.GetPages())
                         {
-                            fileContent += page.Text + " ";
+                            text.Append(page.Text).Append(' ');
                         }
+                        fileContent = text.ToString();
                     }
                     break;
 
@@ -78,6 +81,11 @@ public class IngestionController : ControllerBase
             }
 
             
+            if (string.IsNullOrWhiteSpace(fileContent))
+            {
+                return BadRequest("No text found in this file. Scanned PDFs (images of text) aren't supported yet.");
+            }
+
             await _ingestionService.ProcessDocumentAsync(file.FileName, fileContent, membership.OrganizationId);
 
             return Ok(new { message = "Processed successfully" });

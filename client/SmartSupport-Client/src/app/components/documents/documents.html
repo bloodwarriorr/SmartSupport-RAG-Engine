@@ -1,0 +1,109 @@
+<div class="docs-page">
+  <header class="docs-header">
+    <a routerLink="/chat" class="back-btn" title="Back to chat">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
+      </svg>
+      <span>Chat</span>
+    </a>
+    <div class="header-text">
+      <h1>Documents</h1>
+      <p dir="auto">{{ org()?.name }} · knowledge base</p>
+    </div>
+  </header>
+
+  <main class="docs-content">
+    @if (isAdmin()) {
+      <label class="drop-zone"
+             [class.drag-over]="dragOver()"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+        <input type="file" accept=".pdf,.txt,.md" multiple (change)="onFileInput($event)" hidden>
+        <div class="drop-icon">⬆</div>
+        <div class="drop-title">Drop files here or <span class="link">browse</span></div>
+        <div class="drop-sub">PDF, TXT or Markdown · up to 10 MB each</div>
+      </label>
+    } @else {
+      <div class="member-note">
+        These are the documents SmartSupport answers from. Only your organization's admins can add or remove them.
+      </div>
+    }
+
+    @if (uploads().length) {
+      <ul class="upload-list">
+        @for (u of uploads(); track u.id) {
+          <li class="upload-item" [class.error]="u.status === 'error'" [class.done]="u.status === 'done'">
+            <div class="upload-row">
+              <span class="upload-name" dir="auto">{{ u.name }}</span>
+              <span class="upload-status">
+                @switch (u.status) {
+                  @case ('uploading') { Uploading {{ u.progress }}% }
+                  @case ('processing') { Processing… }
+                  @case ('done') { ✓ Ready }
+                  @case ('error') { Failed }
+                }
+              </span>
+              @if (u.status === 'error') {
+                <button type="button" class="icon-btn" (click)="removeUpload(u.id)" title="Dismiss">✕</button>
+              }
+            </div>
+            @if (u.status === 'error') {
+              <div class="upload-error">{{ u.error }}</div>
+            } @else {
+              <div class="progress">
+                <div class="progress-bar" [class.indeterminate]="u.status === 'processing'" [style.width.%]="u.status === 'processing' ? 100 : u.progress"></div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <section class="doc-section">
+      <div class="section-head">
+        <h2>All documents</h2>
+        <span class="count">{{ documents().length }}</span>
+      </div>
+
+      @if (loading()) {
+        <div class="state">Loading…</div>
+      } @else if (!documents().length) {
+        <div class="state empty">
+          <div class="empty-icon">📂</div>
+          @if (isAdmin()) {
+            <p>No documents yet. Upload your first one above.</p>
+          } @else {
+            <p>No documents yet. Your admin hasn't added any.</p>
+          }
+        </div>
+      } @else {
+        <ul class="doc-list">
+          @for (doc of documents(); track doc.id) {
+            <li class="doc-item" [class.deleting]="deletingId() === doc.id">
+              <span class="doc-icon">{{ typeIcon(doc) }}</span>
+              <div class="doc-info">
+                <div class="doc-name" dir="auto" [title]="doc.fileName">{{ doc.fileName }}</div>
+                <div class="doc-meta">
+                  {{ typeLabel(doc) }} · {{ doc.chunkCount }} {{ doc.chunkCount === 1 ? 'section' : 'sections' }} · added {{ asDate(doc.createdAt) | date: 'mediumDate' }}
+                </div>
+              </div>
+              @if (isAdmin()) {
+                <button type="button" class="delete-btn" (click)="remove(doc)" [disabled]="deletingId() === doc.id" title="Delete document">
+                  @if (deletingId() === doc.id) {
+                    <span class="spinner"></span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>
+                    </svg>
+                  }
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </main>
+</div>
