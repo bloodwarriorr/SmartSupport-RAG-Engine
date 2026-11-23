@@ -5,17 +5,8 @@
       <span class="status-dot" [class.online]="!chatService.isLoading()"></span>
     </div>
 
+    <!-- Left to right: Log out button, name, avatar -->
     <div class="header-user">
-      @if (user) {
-        <div class="user-chip" [title]="user.email">
-          @if (user.picture) {
-            <img [src]="user.picture" alt="" referrerpolicy="no-referrer">
-          } @else {
-            <span class="user-initial">{{ user.name.charAt(0) }}</span>
-          }
-          <span class="user-name" dir="auto">{{ user.name }}</span>
-        </div>
-      }
       <button type="button" class="logout-btn" (click)="logout()" title="Log out">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -23,6 +14,16 @@
         </svg>
         <span>Log out</span>
       </button>
+      @if (user) {
+        <div class="user-chip" [title]="user.email">
+          <span class="user-name" dir="auto">{{ user.name }}</span>
+          @if (user.picture) {
+            <img [src]="user.picture" alt="" referrerpolicy="no-referrer">
+          } @else {
+            <span class="user-initial">{{ user.name.charAt(0) }}</span>
+          }
+        </div>
+      }
     </div>
   </div>
 
