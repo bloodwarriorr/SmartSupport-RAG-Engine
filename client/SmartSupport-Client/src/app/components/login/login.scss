@@ -232,11 +232,31 @@ $accent-2: #3498db;
 }
 
 @media (max-width: 900px) {
-  .topbar { padding: 20px 16px; }
-  .content {
-    grid-template-columns: 1fr;
-    gap: 36px;
-    padding: 8px 16px 32px;
+  .topbar {
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
   }
-  .auth-card { padding: 24px 20px; }
+
+  // On phones: headline → sign-in card → features, so sign-in is visible without scrolling.
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 16px 24px;
+  }
+  .hero { display: contents; }
+  .hero .eyebrow { align-self: flex-start; }
+  .hero h1 { margin: 14px 0 10px; }
+  .hero .lead { margin-bottom: 24px; font-size: 1rem; }
+  .auth-card {
+    order: 1;
+    padding: 22px 18px;
+    border-radius: 16px;
+    h2 { margin-top: 20px; }
+  }
+  .features {
+    order: 2;
+    margin-top: 32px;
+  }
+  .footer { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 }

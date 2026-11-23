@@ -1,16 +1,18 @@
 @import "ngx-toastr/toastr";
+
 html, body {
-  height: 100%;
   margin: 0;
-  
-  background-color: #171717; 
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  min-height: 100%;
+  background-color: #171717;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-body,
+// Pages are centered with auto margins (see each page's :host), which, unlike
+// align-items: center, never pushes tall content above the top of the screen.
 app-root {
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
