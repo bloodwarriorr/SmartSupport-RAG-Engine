@@ -21,6 +21,9 @@ namespace SmartSupport.Api.Services
             Use the earlier conversation to understand follow-up questions.
             Always reply in the language of the user's LATEST question, even if the context or earlier replies are in another language.
             Be clear and concise.
+            Format answers in Markdown when it helps readability: numbered lists for steps, bullet points for several items,
+            **bold** for key numbers, dates and names, tables for schedules or comparisons, and `code` for codes or exact values.
+            Keep one-sentence answers as plain text.
             """;
 
         private readonly ISearchService _searchService;
