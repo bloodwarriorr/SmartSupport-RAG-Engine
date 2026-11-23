@@ -20,7 +20,8 @@ var groqApiKey = builder.Configuration["Groq:ApiKey"] ?? "PLACEHOLDER";
 var groqModel = builder.Configuration["Groq:Model"] ?? "llama3-8b-8192";
 
 
-var huggingFaceApiKey = builder.Configuration["HuggingFace:ApiKey"];
+var geminiApiKey = builder.Configuration["Gemini:ApiKey"];
+var geminiModel = builder.Configuration["Gemini:Model"] ?? "gemini-embedding-001";
 
 
 builder.Services.AddControllers();
@@ -63,15 +64,13 @@ builder.Services.AddOpenAIChatCompletion(
     apiKey: groqApiKey,
     endpoint: new Uri("https://api.groq.com/openai/v1") 
 );
-if (string.IsNullOrWhiteSpace(huggingFaceApiKey))
+if (string.IsNullOrWhiteSpace(geminiApiKey))
 {
-    throw new InvalidOperationException("HuggingFace API key missing in configuration (HuggingFace:ApiKey). Please set a valid API key in appsettings or environment variables.");
+    throw new InvalidOperationException("Gemini API key missing in configuration (Gemini:ApiKey). Please set a valid API key in appsettings or environment variables.");
 }
 
-#pragma warning disable SKEXP0010
 builder.Services.AddSingleton<ITextEmbeddingGenerationService>(sp =>
-    new HuggingFaceEmbeddingService("sentence-transformers/all-MiniLM-L6-v2", huggingFaceApiKey));
-#pragma warning restore SKEXP0070
+    new GeminiEmbeddingService(geminiModel, geminiApiKey));
 //builder.Services.AddHttpClient<IOllamaChatService, OllamaChatService>();
 //builder.Services.AddKernel()
 //    .AddOllamaTextEmbeddingGeneration(

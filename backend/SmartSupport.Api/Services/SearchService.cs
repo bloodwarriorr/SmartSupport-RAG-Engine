@@ -23,11 +23,20 @@ public class SearchService : ISearchService
         var queryVector = queryEmbeddings[0].ToArray();
 
         // Search the Qdrant collection for similar vectors
-        var searchResults = await _qdrantClient.SearchAsync(
-            collectionName: "knowledge_base",
-            vector: queryVector,
-            limit: (ulong)limit
-        );
+        IReadOnlyList<ScoredPoint> searchResults;
+        try
+        {
+            searchResults = await _qdrantClient.SearchAsync(
+                collectionName: QdrantCollections.KnowledgeBase,
+                vector: queryVector,
+                limit: (ulong)limit
+            );
+        }
+        catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
+        {
+            // No documents uploaded yet, so the collection doesn't exist.
+            return new List<SearchResult>();
+        }
 
         // Map the search results to our SearchResult model
         return searchResults.Select(hit => new SearchResult(

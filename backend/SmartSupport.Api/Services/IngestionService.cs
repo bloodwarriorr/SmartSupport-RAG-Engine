@@ -53,7 +53,7 @@ public class IngestionService : IIngestionService
                 var chunkId = Guid.NewGuid();
 
                 
-                await _qdrantClient.UpsertAsync("knowledge_base", new[]
+                await _qdrantClient.UpsertAsync(QdrantCollections.KnowledgeBase, new[]
                 {
                     new PointStruct
                     {
@@ -91,12 +91,12 @@ public class IngestionService : IIngestionService
            
             var response = await _qdrantClient.ListCollectionsAsync();
            
-        if (!response.Contains("knowledge_base"))
+        if (!response.Contains(QdrantCollections.KnowledgeBase))
         {
-            await _qdrantClient.CreateCollectionAsync("knowledge_base",
+            await _qdrantClient.CreateCollectionAsync(QdrantCollections.KnowledgeBase,
                 new VectorParams
                 {
-                    Size = 384, 
+                    Size = GeminiEmbeddingService.Dimensions,
                     Distance = Distance.Cosine
                 });
         }
