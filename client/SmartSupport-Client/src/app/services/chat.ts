@@ -17,6 +17,15 @@ export class ChatService {
   currentSessionId = signal<string | null>(null); 
 
 
+  /** Clears all chat state, e.g. on logout, so the next user starts clean. */
+  reset() {
+    this.currentResponse.set('');
+    this.isLoading.set(false);
+    this.history.set([]);
+    this.sessions.set([]);
+    this.currentSessionId.set(null);
+  }
+
   createNewSession(): string {
     const newId = crypto.randomUUID();
     this.currentSessionId.set(newId);

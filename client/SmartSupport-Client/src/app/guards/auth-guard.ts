@@ -18,7 +18,7 @@ export const authGuard: CanActivateFn = async () => {
       allowOutsideClick: false
     });
 
-    return router.parseUrl('/login');
+    return router.parseUrl('/');
   };
 
   if (token) {
@@ -37,10 +37,10 @@ export const authGuard: CanActivateFn = async () => {
       return true; 
     } catch {
       localStorage.removeItem('idToken');
-      return router.parseUrl('/login');
+      return router.parseUrl('/');
     }
   }
 
   
-  return router.parseUrl('/login');
+  return router.parseUrl('/');
 };

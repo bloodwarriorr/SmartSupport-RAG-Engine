@@ -9,3 +9,8 @@ html, body {
   align-items: center;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+body,
+app-root {
+  width: 100%;
+}

@@ -1,8 +1,72 @@
-<div class="login-container">
-  <div class="login-card">
-    <h1>Welcome to SmartSupport!</h1>
-    <p>Login with google to continue</p>
-    
-    <asl-google-signin-button type='standard' size='large' text='signin_with'></asl-google-signin-button>
-  </div>
+<div class="landing">
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <span class="brand-name">SmartSupport</span>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="hero">
+      <span class="eyebrow">AI support, grounded in your docs</span>
+      <h1>Answers your team can <span class="accent">trust</span>.</h1>
+      <p class="lead">
+        SmartSupport reads your knowledge base and answers questions using only what is in it.
+        No guessing, no made-up facts.
+      </p>
+
+      <ul class="features">
+        @for (f of features; track f.title) {
+          <li>
+            <span class="feature-icon">{{ f.icon }}</span>
+            <div>
+              <strong>{{ f.title }}</strong>
+              <p>{{ f.text }}</p>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="auth-card" aria-label="Sign in">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" [class.active]="mode === 'signin'" [attr.aria-selected]="mode === 'signin'" (click)="setMode('signin')">Sign in</button>
+        <button type="button" role="tab" [class.active]="mode === 'signup'" [attr.aria-selected]="mode === 'signup'" (click)="setMode('signup')">Create account</button>
+      </div>
+
+      @if (mode === 'signin') {
+        <h2>Welcome back</h2>
+        <p class="card-sub">Sign in to continue to your conversations.</p>
+        <div class="google-btn">
+          <asl-google-signin-button type="standard" size="large" shape="pill" theme="filled_black" text="signin_with" [width]="300"></asl-google-signin-button>
+        </div>
+      } @else {
+        <h2>Get started for free</h2>
+        <p class="card-sub">Create your account in one click with Google.</p>
+        <div class="google-btn">
+          <asl-google-signin-button type="standard" size="large" shape="pill" theme="filled_black" text="signup_with" [width]="300"></asl-google-signin-button>
+        </div>
+      }
+
+      <div class="divider"><span>secure sign-in</span></div>
+
+      <ul class="trust">
+        <li>🔒 We never see or store your Google password</li>
+        <li>✔️ Your chats are private to your account</li>
+      </ul>
+
+      <p class="fine-print">
+        @if (mode === 'signin') {
+          New here? <a (click)="setMode('signup')">Create an account</a>
+        } @else {
+          Already have an account? <a (click)="setMode('signin')">Sign in</a>
+        }
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">© {{ year }} SmartSupport</footer>
 </div>
